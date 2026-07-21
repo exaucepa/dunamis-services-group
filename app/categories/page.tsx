@@ -1,12 +1,12 @@
 "use client"
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { getCategories, type Category } from "../lib/categories"
+import { getAllCategories, type Category } from "../lib/categories"
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
 
-  useEffect(() => { getCategories().then(setCategories) }, [])
+  useEffect(() => { getAllCategories().then(setCategories) }, [])
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
