@@ -1,6 +1,22 @@
 "use client";
 import { useState, useEffect } from "react";
-import { createProduct, updateProduct, uploadProductImage, getCategories, type Category, type Product } from "../app/lib/products"; // <-- FIX IMPORTS
+import { getCategories } from "../app/lib/products";
+
+type Category = {
+  id: number;
+  name: string;
+};
+
+// On définit le type nous-même car ton products.ts n'a pas ces champs
+type Product = {
+  id: number;
+  name: string;
+  description: string | null;
+  price: number;
+  category: number;
+  stock: number;
+  image: string | null;
+}
 
 type Props = {
   product: Product | null;
@@ -8,18 +24,24 @@ type Props = {
   onSuccess: () => void;
 }
 
+// Fonction pour uploader l'image via ton API
+async function uploadProductImage(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch("/api/upload", { method: "POST", body: formData });
+  const data = await res.json();
+  return data.url;
+}
+
 export default function AdminProductForm({ product, onClose, onSuccess }: Props) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [form, setForm] = useState({
     name: '',
     description: '',
-    short_description: '', // AJOUT
-    long_description: '', // AJOUT
     price: '',
-    category_id: '',
+    category: '', // On utilise "category" comme dans ton DB
     stock: '',
     image: '',
-    images: [] as string[] // AJOUT
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -33,16 +55,13 @@ export default function AdminProductForm({ product, onClose, onSuccess }: Props)
       setForm({
         name: product.name,
         description: product.description || '',
-        short_description: product.short_description || '', // AJOUT
-        long_description: product.long_description || '', // AJOUT
         price: String(product.price),
-        category_id: product.category_id,
+        category: String(product.category),
         stock: String(product.stock),
-        image: product.image,
-        images: product.images || [] // AJOUT
+        image: product.image || '',
       })
     } else {
-      setForm({name: '', description: '', short_description: '', long_description: '', price: '', category_id: '', stock: '', image: '', images: []})
+      setForm({name: '', description: '', price: '', category: '', stock: '', image: ''})
     }
   }, [product]);
 
@@ -52,29 +71,30 @@ export default function AdminProductForm({ product, onClose, onSuccess }: Props)
     try {
       let imageUrl = form.image;
       if(imageFile) {
-        imageUrl = await uploadProductImage(imageFile); // FIX NOM FONCTION
+        imageUrl = await uploadProductImage(imageFile);
       }
 
       const productData = {
         name: form.name,
         description: form.description,
-        short_description: form.short_description,
-        long_description: form.long_description,
         price: Number(form.price),
         stock: Number(form.stock),
         image: imageUrl,
-        images: form.images, // AJOUT
-        category_id: form.category_id
+        category: Number(form.category) // Important: number pas string
       };
 
-      if(isEditMode && product) {
-        await updateProduct(product.id, productData);
-        alert("Produit modifié!");
-      } else {
-        await createProduct(productData); // FIX NOM FONCTION
-        alert("Produit ajouté!");
-      }
+      const url = isEditMode && product? `/api/products/${product.id}` : `/api/products`;
+      const method = isEditMode && product? 'PUT' : 'POST';
 
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(productData)
+      });
+
+      if(!res.ok) throw new Error("Erreur serveur");
+
+      alert(isEditMode? "Produit modifié!" : "Produit ajouté!");
       onSuccess();
       onClose();
     } catch(err: any) {
@@ -91,12 +111,10 @@ export default function AdminProductForm({ product, onClose, onSuccess }: Props)
         <form onSubmit={handleSubmit} className="space-y-4">
           <input placeholder="Nom" value={form.name} onChange={e => setForm({...form, name: e.target.value})} className="w-full border p-2 rounded" required/>
 
-          <input placeholder="Description courte" value={form.short_description} onChange={e => setForm({...form, short_description: e.target.value})} className="w-full border p-2 rounded"/>
-          <textarea placeholder="Description" value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full border p-2 rounded" />
-          <textarea placeholder="Description longue" value={form.long_description} onChange={e => setForm({...form, long_description: e.target.value})} className="w-full border p-2 rounded" rows={4}/>
+          <textarea placeholder="Description" value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full border p-2 rounded" rows={3}/>
 
           <input type="number" placeholder="Prix" value={form.price} onChange={e => setForm({...form, price: e.target.value})} className="w-full border p-2 rounded" required/>
-          <select value={form.category_id} onChange={e => setForm({...form, category_id: e.target.value})} className="w-full border p-2 rounded" required>
+          <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="w-full border p-2 rounded" required>
             <option value="">Choisir catégorie</option>
             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
