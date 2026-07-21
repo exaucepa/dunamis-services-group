@@ -17,7 +17,7 @@ export default function AdminCategoryForm({ category, onClose, onSuccess }: Prop
   useEffect(() => {
     setFormData({
       name: category?.name || "",
-      image: category?.image || "" // <-- CORRIGÉ ICI
+      image: (category as any)?.image || ""
     })
   }, [category])
 

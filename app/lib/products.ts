@@ -104,3 +104,30 @@ export const uploadProductImages = async (file: File): Promise<string> => {
   const { data } = supabase.storage.from('products').getPublicUrl(filePath);
   return data.publicUrl;
 };
+
+// UPLOAD GENERIQUE - pour catégories aussi
+export const uploadProductImage = async (file: File): Promise<string> => {
+  return uploadProductImages(file) // on réutilise la même
+};
+
+// CATEGORIES CRUD
+export const createCategory = async (name: string, image: string) => {
+  const { data, error } = await supabase
+    .from("categories")
+    .insert([{ name, image }])
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
+export const updateCategory = async (id: number, name: string, image: string) => {
+  const { data, error } = await supabase
+    .from("categories")
+    .update({ name, image })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
