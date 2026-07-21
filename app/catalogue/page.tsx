@@ -1,9 +1,31 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { getAllProducts, getCategories } from "../lib/products";
 import ProductCard from "../../components/ProductCard";
+import type { Product, Category } from "../lib/products";
 
-export default async function CataloguePage() {
-  const products = await getAllProducts();
-  const categories = await getCategories();
+export default function CataloguePage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      const [prods, cats] = await Promise.all([
+        getAllProducts(),
+        getCategories()
+      ]);
+      setProducts(prods);
+      setCategories(cats);
+      setLoading(false);
+    }
+    loadData();
+  }, []);
+
+  if (loading) {
+    return <div className="max-w-7xl mx-auto px-4 py-20 text-center">Chargement du catalogue...</div>
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-16">
