@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { ShoppingCart, User } from "lucide-react";
-import CartCounter from "./CartCounter";
+import  CartCounter  from "./CartCounter";
 
 function SearchBar() {
   return (

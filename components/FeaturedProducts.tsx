@@ -1,3 +1,5 @@
+"use client";
+
 import { getFeaturedProductsWithPromo } from "../app/lib/products";
 import ProductCard from "./ProductCard";
 

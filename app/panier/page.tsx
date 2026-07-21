@@ -1,12 +1,12 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCart } from "../context/CartContext";
 import { formatPrice } from "../lib/products";
 import Link from "next/link";
-import Image from "next/image";
 import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 
-export default function PanierPage() {
+function PanierContent() {
   const { cart, removeFromCart, addToCart, totalPrice, totalItems } = useCart();
 
   if (cart.length === 0) {
@@ -27,7 +27,6 @@ export default function PanierPage() {
       <h1 className="text-4xl font-extrabold mb-8">Votre Panier ({totalItems} articles)</h1>
       
       <div className="grid lg:grid-cols-3 gap-8">
-        {/* Liste des produits */}
         <div className="lg:col-span-2 space-y-4">
           {cart.map(item => (
             <div key={item.id} className="flex items-center gap-4 bg-white dark:bg-zinc-900 p-4 rounded-2xl shadow">
@@ -48,7 +47,6 @@ export default function PanierPage() {
           ))}
         </div>
 
-        {/* Résumé commande */}
         <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow h-fit">
           <h2 className="text-2xl font-bold mb-4">Résumé</h2>
           <div className="flex justify-between mb-2">
@@ -73,3 +71,6 @@ export default function PanierPage() {
     </div>
   );
 }
+
+// LA MAGIE ICI : on désactive le SSR pour cette page
+export default dynamic(() => Promise.resolve(PanierContent), { ssr: false });

@@ -1,16 +1,14 @@
-"use client"
-
 import { Suspense } from "react";
-import SearchResults from "./SearchResults";
+import CheckoutForm from "./CheckoutForm";
 
-export default function SearchPage() {
+export default function CheckoutPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center">
-        <p>Recherche...</p>
+        <p>Chargement du checkout...</p>
       </div>
     }>
-      <SearchResults />
+      <CheckoutForm />
     </Suspense>
   );
 }

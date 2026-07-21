@@ -1,4 +1,5 @@
 "use client"
+
 import { useState, useEffect } from "react"
 import { updateProduct, getProductById, uploadProductImages, getCategories } from "../../../../lib/products"
 import { getAllCategories, type Category } from "../../../../lib/categories"

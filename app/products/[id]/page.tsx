@@ -33,7 +33,7 @@ export default function ProductDetailPage() {
 
         <div className="flex items-center gap-2 my-3 text-gray-600">
           <Star size={18} className="text-yellow-500 fill-yellow-500" />
-          <span>{product.rating} / 5 - 234 avis</span>
+          <span>{product.rating} / 5 - {product.reviews_count || 234} avis</span>
         </div>
 
         <div className="my-4">
@@ -49,11 +49,19 @@ export default function ProductDetailPage() {
 
         <div className="prose dark:prose-invert max-w-none my-6">
           <h3>Description ✨</h3>
-          <p>{product.long_description || product.description}</p>
+          <p>{product.short_description || product.description}</p>
         </div>
 
         <div className="flex flex-col gap-3 mt-8">
-          <button onClick={() => addToCart({ id: product.id, name: product.name, price: displayPrice, image: product.image })} className="w-full bg-gray-800 text-white py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-lg hover:bg-gray-700">
+          <button onClick={() => addToCart({
+            id: product.id, name: product.name, price: displayPrice, image: product.image,
+            rating: undefined,
+            reviews_count: 0,
+            short_description: undefined,
+            images: [],
+            description: "",
+            stock: 0
+          })} className="w-full bg-gray-800 text-white py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-lg hover:bg-gray-700">
             <ShoppingCart size={20}/> Ajouter au panier
           </button>
           <a href={whatsappLink} target="_blank" className="w-full bg-green-600 text-white py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-lg hover:bg-green-700">

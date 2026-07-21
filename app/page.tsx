@@ -4,7 +4,7 @@ import FeaturedProducts from "../components/FeaturedProducts";
 import Categories from "../components/Categories";
 import Benefits from "../components/Benefits";
 import Timer from "../components/Timer";
-import { getGroupagesEnCours, formatPrice } from "./lib/products";
+import { getGroupagesEnCours, formatPrice } from "../app/lib/products"; // <-- FIX ICI
 
 async function GroupageCard({ groupage }: { groupage: any }) {
   const product = groupage.product;
@@ -56,13 +56,12 @@ async function GroupageSection() {
   );
 }
 
-
 export default async function Home() {
   return (
     <main className="min-h-screen bg-white dark:bg-zinc-950">
       <HeroSlider />
-      <FeaturedProducts /> {/* Ce composant doit utiliser getFeaturedProducts() */}
-      <GroupageSection /> {/* Server Component qui fetch les groupages */}
+      <FeaturedProducts />
+      <GroupageSection />
       <Categories />
       <Benefits />
     </main>

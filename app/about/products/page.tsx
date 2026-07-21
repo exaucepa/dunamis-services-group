@@ -3,10 +3,8 @@ import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { Plus, Pencil, Trash2, Search, Loader2, Upload } from "lucide-react"
 import Image from "next/image"
-import { 
-  getAllProductsForAdmin, 
-  deleteProduct, 
-  createProduct,
+import { getAllProductsForAdmin, 
+  deleteProduct,  createProduct,
   updateProduct,
   uploadProductImage,
   uploadProductImages,
@@ -174,7 +172,7 @@ export default function AdminProductsPage() {
       {/* Modal Formulaire */}
       {showForm && (
         <AdminProductForm
-          product={editingProduct}
+          product={editingProduct as any}
           onClose={() => setShowForm(false)}
           onSuccess={fetchProducts}
         />

@@ -1,82 +1,79 @@
-"use client";
+"use client"
 
-import { createContext, useContext, useState, useEffect } from "react";
-import { supabase } from "../lib/supabase"; // <-- important pour les stats
-import { type Product } from "../lib/products";
+import { createContext, useContext, useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import type { Product } from "../lib/products" // <-- CORRIGÉ LE CHEMIN
 
-type CartItem = Product & { quantity: number };
+type CartItem = Product & { quantity: number }
 
 type CartContextType = {
-  cart: CartItem[];
-  addToCart: (product: Product) => void;
-  removeFromCart: (id: string) => void;
-  clearCart: () => void;
-  totalPrice: number;
-  totalItems: number;
-};
+  cart: CartItem[]
+  addToCart: (product: Product, quantity?: number) => void
+  removeFromCart: (id: string) => void
+  updateQuantity: (id: string, quantity: number) => void
+  clearCart: () => void
+  orderSingleProduct: (product: Product) => void
+  total: number
+  totalPrice: number
+  totalItems: number
+}
 
-const CartContext = createContext<CartContextType | undefined>(undefined);
+const CartContext = createContext<CartContextType | undefined>(undefined)
 
-export const CartProvider = ({ children }: { children: React.ReactNode }) => {
-  const [cart, setCart] = useState<CartItem[]>([]);
+export function CartProvider({ children }: { children: React.ReactNode }) {
+  const [cart, setCart] = useState<CartItem[]>([])
+  const router = useRouter()
 
-  // Charger depuis localStorage
   useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) setCart(JSON.parse(savedCart));
-  }, []);
+    const saved = localStorage.getItem("cart")
+    if (saved) setCart(JSON.parse(saved))
+  }, [])
 
-  // Sauvegarder dans localStorage
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
-  }, [cart]);
+    localStorage.setItem("cart", JSON.stringify(cart))
+  }, [cart])
 
-  const trackCartEvent = async (productId: string) => {
-    // On log pour les stats "Produits Phares"
-    await supabase.from('cart_events').insert({
-      product_id: productId,
-      event_type: 'add_to_cart'
-    });
+  const addToCart = (product: Product, quantity = 1) => {
+    setCart(prev => {
+      const exist = prev.find(p => p.id === product.id)
+      if (exist) {
+        return prev.map(p => p.id === product.id? {...p, quantity: p.quantity + quantity } : p)
+      }
+      return [...prev, {...product, quantity }]
+    })
   }
 
-  const addToCart = (product: Product) => {
-    setCart(prev => {
-      const existing = prev.find(item => item.id === product.id);
-      if (existing) {
-        return prev.map(item =>
-          item.id === product.id? {...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [...prev, {...product, quantity: 1 }];
-    });
-
-    // On envoie l'event pour les stats mais sans bloquer l'UI
-    trackCartEvent(product.id);
-  };
-
   const removeFromCart = (id: string) => {
-    setCart(prev => prev.filter(item => item.id!== id));
-  };
+    setCart(prev => prev.filter(p => p.id!== id)) // <-- FIX ICI
+  }
 
-  const clearCart = () => setCart([]);
+  const updateQuantity = (id: string, quantity: number) => {
+    if (quantity <= 0) return removeFromCart(id)
+    setCart(prev => prev.map(p => p.id === id? {...p, quantity } : p))
+  }
 
-  const totalPrice = cart.reduce((total, item) => {
-    // Si promo_price existe on prend promo, sinon prix normal
-    const price = item.promo_price && item.promo_price > 0? item.promo_price : item.price;
-    return total + price * item.quantity;
-  }, 0);
+  const clearCart = () => setCart([])
 
-  const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+  const orderSingleProduct = (product: Product) => {
+    setCart([{...product, quantity: 1 }])
+    router.push("/checkout")
+  }
+
+  const totalPrice = cart.reduce((sum, item) => sum + (item.promo_price || item.price) * item.quantity, 0)
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0)
 
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart, totalPrice, totalItems }}>
+    <CartContext.Provider value={{
+      cart, addToCart, removeFromCart, updateQuantity, clearCart, orderSingleProduct,
+      total: totalPrice, totalPrice, totalItems
+    }}>
       {children}
     </CartContext.Provider>
-  );
-};
+  )
+}
 
-export const useCart = () => {
-  const context = useContext(CartContext);
-  if (!context) throw new Error("useCart must be used within CartProvider");
-  return context;
-};
+export const useCart = () => { // <-- FIX ICI: plus de paramètre
+  const ctx = useContext(CartContext)
+  if (!ctx) throw new Error("useCart must be used within CartProvider")
+  return ctx
+}
