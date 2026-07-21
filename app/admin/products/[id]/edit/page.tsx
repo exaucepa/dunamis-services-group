@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
-import { updateProduct, getProductById, uploadProductImages } from "../../../../lib/products"
-import { getCategories, type Category } from "../../../../lib/categories"
+import { updateProduct, getProductById, uploadProductImages, getCategories } from "../../../../lib/products"
+import { getAllCategories, type Category } from "../../../../lib/categories"
 import { useRouter, useParams } from "next/navigation"
 import { Save, ArrowLeft, Loader2, X, Upload } from "lucide-react"
 import Link from "next/link"
@@ -23,13 +23,17 @@ export default function EditProductPage() {
   const { id } = useParams()
 
   useEffect(() => {
-    getCategories().then(setCategories)
+    getAllCategories().then(setCategories)
     if(id) getProductById(id as string).then(p => {
       if(p) {
         setName(p.name); setPrice(String(p.price)); setPromoPrice(String(p.promo_price || "")); setStock(String(p.stock));
         setImages(p.images.length? p.images : [p.image]);
-        setDescription(p.description); setShortDescription(p.short_description);
-        setLongDescription(p.long_description); setCategoryId(p.category_id || "")
+        setDescription(p.description);
+        // short_description may not exist on Product type — fallback safely
+        setShortDescription(((p as any).short_description ?? (p as any).shortDescription ?? "") as string);
+        // long_description may be named long_description or longDescription; fallback to description
+        setLongDescription(((p as any).long_description ?? (p as any).longDescription ?? p.description ?? "") as string);
+        setCategoryId(p.category_id !== undefined && p.category_id !== null ? String(p.category_id) : "")
       }
     })
   }, [id])
@@ -39,8 +43,10 @@ export default function EditProductPage() {
     if (!files || files.length === 0) return;
     setUploading(true);
     try {
-      const urls = await uploadProductImages(Array.from(files));
-      setImages(prev => [...prev,...urls]);
+      const fileArray = Array.from(files);
+      const uploadResults = await Promise.all(fileArray.map(file => uploadProductImages(file)));
+      const urls = uploadResults.flat();
+      setImages(prev => [...prev, ...urls]);
     } catch (err) { alert("Erreur upload image"); }
     setUploading(false);
   };
@@ -50,11 +56,21 @@ export default function EditProductPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    await updateProduct(id as string, {
-      name, price: Number(price), promo_price: promo_price? Number(promo_price) : null, stock: Number(stock),
-      image: images[0], images,
-      description, short_description, long_description, category_id
-    })
+    // build payload as any to allow additional fields not present on Product type
+    const payload: any = {
+      name,
+      price: Number(price),
+      promo_price: promo_price ? Number(promo_price) : undefined,
+      stock: Number(stock),
+      image: images[0],
+      images,
+      description,
+      short_description,
+      long_description,
+      category_id: category_id ? Number(category_id) : undefined,
+    }
+
+    await updateProduct(id as string, payload)
     setLoading(false)
     router.push("/admin/products")
   }

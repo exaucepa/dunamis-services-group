@@ -23,7 +23,9 @@ export default function CategoryPage() {
       const currentCategory = allCategories.find(c => c.slug === slug);
       if(currentCategory) {
         setCategoryName(currentCategory.name);
-        const filteredProducts = allProducts.filter(p => p.category_id === currentCategory.id);
+        const filteredProducts = allProducts.filter(
+          p => p.category_id !== undefined && p.category_id.toString() === currentCategory.id
+        );
         setProducts(filteredProducts);
       }
       setLoading(false);
