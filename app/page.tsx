@@ -6,6 +6,7 @@ import Benefits from "../components/Benefits";
 import { getActiveGroupages, formatPrice } from "./lib/products";
 import { Users, Clock } from "lucide-react";
 
+
 async function GroupageCard({ groupage }: { groupage: any }) {
   const product = groupage.products; // <- CORRIGÉ ICI: products avec S
   if (!product || product.id === 'deleted') return null; // <- Sécurité
@@ -26,7 +27,7 @@ async function GroupageCard({ groupage }: { groupage: any }) {
       <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-2 mb-4">
         <div className="bg-purple-600 h-2 rounded-full" style={{width: `${progress}%`}}></div>
       </div>
-      <Link href={`/product/${groupage.product_id}`} className="w-full block text-center bg-purple-600 text-white py-2 rounded-lg font-bold hover:bg-purple-700">
+      <Link href={`/products/${groupage.product_id}`} className="w-full block text-center bg-purple-600 text-white py-2 rounded-lg font-bold hover:bg-purple-700">
         Rejoindre
       </Link>
     </div>

@@ -3,9 +3,9 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import { addToCart } from "../app/lib/cart"; // <-- NOUVEAU
-import { type Product, formatPrice } from "../app/lib/products"; 
+import { type Products, formatPrice } from "../app/lib/products"; 
 
-export default function ProductCard(product: Product) {
+export default function ProductCard(product: Products) {
   const price = product.promo_price || product.price;
   const hasPromo = !!product.promo_price;
   const discount = hasPromo? Math.round((1 - product.promo_price! / product.price) * 100) : 0;
@@ -19,7 +19,7 @@ export default function ProductCard(product: Product) {
 
   return (
     <motion.div whileHover={{ y: -5 }} className="group bg-white dark:bg-zinc-900 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition flex-col">
-      <Link href={`/produit/${product.id}`} className="flex-1"> {/* <-- CORRIGÉ /produit/ */}
+      <Link href={`/products/${product.id}`} className="flex-1"> {/* <-- CORRIGÉ /produit/ */}
         <div className="relative">
           <img src={product.image} alt={product.name} className="w-full h-56 object-cover group-hover:scale-105 transition duration-300"/>
           {hasPromo && (

@@ -1,11 +1,11 @@
 "use client"
 import { useState, useEffect } from "react";
-import { getAllProducts, type Product } from "../app/lib/products";
+import { getAllProducts, type Products } from "../app/lib/products";
 import Link from "next/link";
 import { Loader2, ShoppingCart } from "lucide-react";
 
 export default function FeaturedProducts() { // <-- PLUS ASYNC
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Products[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function FeaturedProducts() { // <-- PLUS ASYNC
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         {products.map(p => (
           <div key={p.id} className="group border rounded-2xl p-4 hover:shadow-xl transition flex flex-col">
-            <Link href={`/produit/${p.id}`}>
+            <Link href={`/products/${p.id}`}>
               <img src={p.image} className="h-48 w-full object-cover rounded-lg mb-3"/>
               <h3 className="font-bold truncate">{p.name}</h3>
               <p className="text-blue-600 font-bold text-lg mb-3">

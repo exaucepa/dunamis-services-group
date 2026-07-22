@@ -2,11 +2,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, X } from "lucide-react";
 import Link from "next/link";
-import { getAllProducts, getCategories, type Product, type Category } from "../app/lib/products";
+import { getAllProducts, getCategories, type Products, type Category } from "../app/lib/products";
 
 export default function SearchBar() {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<{products: Product[], categories: Category[]}>({products: [], categories: []});
+  const [results, setResults] = useState<{products: Products[], categories: Category[]}>({products: [], categories: []});
   const [showResults, setShowResults] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 

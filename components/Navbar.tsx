@@ -1,11 +1,11 @@
 "use client";
 import Link from "next/link"; import { Menu, Search, ShoppingCart, X, Settings } from "lucide-react";
-import { useState, useEffect, useRef } from "react"; import { getAllProducts, getCategories, type Product, type Category } from "../app/lib/products";
+import { useState, useEffect, useRef } from "react"; import { getAllProducts, getCategories, type Products, type Category } from "../app/lib/products";
 import { useCart } from "../context/CartContext";
 
 export default function Navbar() {
   const [query, setQuery] = useState(""); const [showSearch, setShowSearch] = useState(false); const [openMobile, setOpenMobile] = useState(false);
-  const [results, setResults] = useState<{products: Product[], categories: Category[]}>({products: [], categories: []});
+  const [results, setResults] = useState<{products: Products[], categories: Category[]}>({products: [], categories: []});
   const { cart } = useCart(); const searchRef = useRef<HTMLDivElement>(null); const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => { const fetchResults = async () => { if (query.length < 2) { setResults({products: [], categories: []}); return; }

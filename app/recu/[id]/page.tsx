@@ -51,7 +51,7 @@ export default function RecuPage() {
       <div id="recu-pdf" className="max-w-2xl mx-auto bg-white dark:bg-zinc-900 p-8 rounded-2xl shadow-lg">
         {/* HEADER */}
         <div className="text-center border-b pb-4 mb-6">
-          <h1 className="text-3xl font-bold text-purple-700">DUNAMIS SHOP</h1>
+          <h1 className="text-3xl font-bold text-purple-700">DUNAMIS SERVICES GROUP</h1>
           <p className="text-sm">Lomé, Togo - WhatsApp: +228 90 66 78 68</p>
         </div>
 

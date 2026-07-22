@@ -15,10 +15,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.className}>
         <CartProvider>
           <Navbar />
-          <main>{children}</main>
+          {children}
           <Footer />
         </CartProvider>
       </body>
     </html>
-  );
+  )
 }
