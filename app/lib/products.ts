@@ -19,10 +19,33 @@ export type Product = {
 };
 
 export type Category = {
-  id: number;
+   id: number;
   name: string;
+  description?: string;
   image?: string;
+  slug?: string;
+  theme?: string;
 }
+
+export const getCategories = async (): Promise<Category[]> => {
+  const { data } = await supabase.from("categories").select("*").order("name");
+  return data || [];
+};
+
+export const createCategory = async (categoryData: Partial<Category>) => {
+  const { data, error } = await supabase.from("categories").insert([categoryData]).select().single();
+  if (error) throw error; return data;
+};
+
+export const updateCategory = async (id: number, categoryData: Partial<Category>) => {
+  const { data, error } = await supabase.from("categories").update(categoryData).eq("id", id).select().single();
+  if (error) throw error; return data;
+};
+
+export const deleteCategory = async (id: number) => {
+  const { error } = await supabase.from("categories").delete().eq("id", id);
+  if (error) throw error;
+};
 
 const mapProduct = (p: any): Product => ({
   id: p.id, name: p.name, price: p.price, promo_price: p.promo_price,
@@ -44,10 +67,6 @@ export const getAllProducts = async (): Promise<Product[]> => {
 export const getProductById = async (id: string): Promise<Product | null> => {
   const { data } = await supabase.from("products").select("*, category:categories(name)").eq("id", id).single();
   return data? mapProduct(data) : null;
-};
-export const getCategories = async (): Promise<Category[]> => {
-  const { data } = await supabase.from("categories").select("*").order("name");
-  return data || [];
 };
 export const getFeaturedProducts = async (): Promise<Product[]> => {
   const { data } = await supabase.from("products").select("*, category:categories(name)").eq("featured", true).limit(8);
@@ -72,14 +91,9 @@ export const deleteProduct = async (id: string) => {
 };
 
 // CATEGORIES ADMIN
-export const createCategory = async (name: string, image: string) => {
-  const { data, error } = await supabase.from("categories").insert([{ name, image }]).select().single();
-  if (error) throw error; return data;
-};
-export const updateCategory = async (id: number, name: string, image: string) => {
-  const { data, error } = await supabase.from("categories").update({ name, image }).eq("id", id).select().single();
-  if (error) throw error; return data;
-};
+// CATEGORIES ADMIN
+
+
 
 // UPLOAD
 export const uploadProductImages = async (file: File): Promise<string> => {
@@ -122,3 +136,4 @@ export const getProductsOnPromo = async (): Promise<Product[]> => {
   if (error) throw error;
   return (data || []).map(mapProduct);
 };
+

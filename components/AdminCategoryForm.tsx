@@ -37,10 +37,21 @@ export default function AdminCategoryForm({ category, onClose, onSuccess }: Prop
     try {
       setLoading(true)
       if (category) {
-        await updateCategory(category.id, formData.name.trim(), formData.image) // <-- FIX 2: 3 params
+        // updateCategory expects (id, data)
+        // updateCategory expects 4 arguments; pass undefined for unused extras
+        await updateCategory(category.id, {
+          name: formData.name.trim(),
+          image: formData.image,
+          description: (category as any)?.description ?? "",
+        }, )
       }
       else {
-        await createCategory(formData.name.trim(), formData.image)
+        // createCategory expects a single data object
+        await createCategory({
+          name: formData.name.trim(),
+          image: formData.image,
+          description: "",
+        })
       }
       onSuccess();
       onClose();

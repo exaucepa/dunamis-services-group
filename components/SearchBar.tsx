@@ -1,91 +1,89 @@
 "use client"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation" // 1. AJOUT
-// Local fallback for products search to avoid missing-module build errors.
-// If you have a real implementation, replace these with the correct import path.
-type Product = {
-  id: string
-  name: string
-  category: string
-  price: number
-  image: string
-}
-
-const searchProducts = async (q: string): Promise<Product[]> => {
-  // minimal stub: return empty results. Replace with real search implementation.
-  return []
-}
-import Link from "next/link"
-import { Search, Loader2 } from "lucide-react"
-import Image from "next/image"
+import { useState, useEffect, useRef } from "react";
+import { Search, X } from "lucide-react";
+import Link from "next/link";
+import { getAllProducts, getCategories, type Product, type Category } from "../app/lib/products";
 
 export default function SearchBar() {
-  const [query, setQuery] = useState("")
-  const [results, setResults] = useState<Product[]>([])
-  const [loading, setLoading] = useState(false)
-  const [showResults, setShowResults] = useState(false)
-  const router = useRouter() // 2. AJOUT
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<{products: Product[], categories: Category[]}>({products: [], categories: []});
+  const [showResults, setShowResults] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (query.length < 2) {
-      setResults([])
-      return
+    const fetchResults = async () => {
+      if (query.length < 2) { setResults({products: [], categories: []}); return; }
+      
+      const [allProducts, allCategories] = await Promise.all([getAllProducts(), getCategories()]);
+      
+      const filteredProducts = allProducts
+       .filter(p => p.name.toLowerCase().includes(query.toLowerCase()))
+       .slice(0, 5); // Max 5 produits
+      
+      const filteredCategories = allCategories
+       .filter(c => c.name.toLowerCase().includes(query.toLowerCase()))
+       .slice(0, 3); // Max 3 catégories
+
+      setResults({products: filteredProducts, categories: filteredCategories});
+      setShowResults(true);
     }
 
-    const delayDebounce = setTimeout(async () => {
-      setLoading(true)
-      const data = await searchProducts(query)
-      setResults(data)
-      setLoading(false)
-    }, 300) // on attend 300ms pour ne pas spam Supabase
+    const debounce = setTimeout(fetchResults, 300); // Attend 300ms
+    return () => clearTimeout(debounce);
+  }, [query]);
 
-    return () => clearTimeout(delayDebounce)
-  }, [query])
-
-  const handleSearch = () => {
-    if (query.length > 1) {
-      router.push(`/search?q=${encodeURIComponent(query)}`  )
-      setShowResults(false)
-      setQuery("") // on vide la barre après recherche
+  // Ferme si on clique dehors
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if(searchRef.current &&!searchRef.current.contains(e.target as Node)) setShowResults(false);
     }
-  }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [])
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto">
+    <div ref={searchRef} className="relative w-full max-w-xl">
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20}/>
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setShowResults(true)}
-          onBlur={() => setTimeout(() => setShowResults(false), 200)} // délai pour pouvoir cliquer
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()} // 3. AJOUT
-          placeholder="Recher un outil, une marque, une catégorie..."
-          className="w-full pl-12 pr-4 py-3 border dark:border-zinc-700 rounded-full bg-white dark:bg-zinc-900 focus:ring-2 focus:ring-blue-500 outline-none"
+          onFocus={() => query.length > 1 && setShowResults(true)}
+          placeholder="Recher un produit, une catégorie..."
+          className="w-full pl-10 pr-10 py-3 border rounded-full bg-gray-100 dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        {loading && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 animate-spin text-gray-400" size={20} />}
+        {query && <button onClick={() => setQuery("")}><X className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={20}/></button>}
       </div>
 
-      {/* Résultats Anticipatifs */}
-      {showResults && results.length > 0 && (
-        <div className="absolute top-14 left-0 right-0 bg-white dark:bg-zinc-900 border dark:border-zinc-700 rounded-2xl shadow-xl z-50 overflow-hidden">
-          {results.map((product) => (
-            <Link
-              href={`/product/${product.id}`}
-              key={product.id}
-              onClick={() => setShowResults(false)} // ferme la liste au clic
-              className="flex items-center gap-4 p-3 hover:bg-gray-100 dark:hover:bg-zinc-800 transition"
-            >
-              <div className="relative w-12 h-12 flex-shrink-0">
-                <Image src={product.image} alt={product.name} fill className="object-cover rounded-lg" unoptimized />
-              </div>
-              <div>
-                <p className="font-semibold">{product.name}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{product.category} • {product.price.toLocaleString()} FCFA</p>
-              </div>
-            </Link>
-          ))}
+      {showResults && (results.products.length > 0 || results.categories.length > 0) && (
+        <div className="absolute top-14 w-full bg-white dark:bg-zinc-900 shadow-2xl rounded-2xl p-4 z-50 max-h-96 overflow-y-auto">
+          
+          {results.categories.length > 0 && (
+            <div className="mb-4">
+              <h3 className="font-bold text-sm text-gray-500 mb-2">CATÉGORIES</h3>
+              {results.categories.map(c => (
+                <Link key={c.id} href={`/catalogue?cat=${c.id}`} onClick={() => setShowResults(false)} className="block p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg">
+                  {c.name}
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {results.products.length > 0 && (
+            <div>
+              <h3 className="font-bold text-sm text-gray-500 mb-2">PRODUITS</h3>
+              {results.products.map(p => (
+                <Link key={p.id} href={`/produit/${p.id}`} onClick={() => setShowResults(false)} className="flex items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg">
+                  <img src={p.image} className="w-12 h-12 rounded object-cover"/>
+                  <div>
+                    <p className="font-semibold">{p.name}</p>
+                    <p className="text-blue-600 font-bold">{p.promo_price? `${p.promo_price}F` : `${p.price}F`}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
