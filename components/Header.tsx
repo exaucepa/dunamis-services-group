@@ -1,94 +1,69 @@
 "use client";
-
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, Search, ShoppingCart } from "lucide-react";
+import { ShoppingCart, Menu, X } from "lucide-react";
+import SearchBar from "./SearchBar";
+import { getCartCount } from "../app/lib/cart"; // <-- Importe
 
-export default function Navbar() {
+export default function Header() {
+  const [cartCount, setCartCount] = useState(0);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const updateCartCount = () => {
+    setCartCount(getCartCount()); // <-- Utilise la fonction
+  };
+
+  useEffect(() => {
+    updateCartCount(); 
+    
+    window.addEventListener('cartUpdated', updateCartCount);
+    window.addEventListener('storage', updateCartCount); // <-- Pour onglet 2
+    return () => {
+      window.removeEventListener('cartUpdated', updateCartCount);
+      window.removeEventListener('storage', updateCartCount);
+    };
+  }, []);
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/90 backdrop-blur-md">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
+    <header className="sticky top-0 z-50 bg-white dark:bg-zinc-900 shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4">
+        <Link href="/" className="font-bold text-2xl text-purple-600">DUNAMIS</Link>
+        
+        <div className="hidden md:block flex-1">
+          <SearchBar />
+        </div>
 
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-700 text-xl font-bold text-white">
-            D
-          </div>
-
-          <div>
-            <h1 className="text-lg font-extrabold text-slate-900">
-              DUNAMIS
-            </h1>
-
-            <p className="text-xs text-gray-500">
-              SERVICES GROUP
-            </p>
-          </div>
-        </Link>
-
-        {/* Navigation Desktop */}
-        <nav className="hidden items-center gap-8 md:flex">
-          <Link
-            href="/"
-            className="font-medium text-gray-700 transition hover:text-blue-700"
-          >
-            Accueil
-          </Link>
-
-          <Link
-            href="/catalogue"
-            className="font-medium text-gray-700 transition hover:text-blue-700"
-          >
-            Catalogue
-          </Link>
-
-          <Link
-            href="/categories"
-            className="font-medium text-gray-700 transition hover:text-blue-700"
-          >
-            Catégories
-          </Link>
-
-          <Link
-            href="/about"
-            className="font-medium text-gray-700 transition hover:text-blue-700"
-          >
-            À propos
-          </Link>
-
-          <Link
-            href="/contact"
-            className="font-medium text-gray-700 transition hover:text-blue-700"
-          >
-            Contact
+        <nav className="hidden md:flex gap-6 items-center font-medium">
+          <Link href="/" className="hover:text-purple-600">Accueil</Link>
+          <Link href="/catalogue" className="hover:text-purple-600">Catalogue</Link>
+          <Link href="/a-propos" className="hover:text-purple-600">À propos</Link>
+          
+          <Link href="/panier" className="relative p-2">
+            <ShoppingCart size={24} />
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                {cartCount}
+              </span>
+            )}
           </Link>
         </nav>
 
-        {/* Actions */}
-        <div className="flex items-center gap-3">
-
-          <button className="rounded-xl p-3 transition hover:bg-gray-100">
-            <Search size={22} />
-          </button>
-
-          <button className="relative rounded-xl p-3 transition hover:bg-gray-100">
-            <ShoppingCart size={22} />
-
-            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white">
-              0
-            </span>
-          </button>
-
-          <button className="hidden rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white transition hover:bg-blue-800 md:block">
-            Commander
-          </button>
-
-          <button className="rounded-xl p-3 transition hover:bg-gray-100 md:hidden">
-            <Menu size={24} />
-          </button>
-
-        </div>
-
+        <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden">
+          {mobileOpen ? <X/> : <Menu/>}
+        </button>
       </div>
+
+      <div className="md:hidden px-4 pb-4">
+        <SearchBar />
+      </div>
+
+      {mobileOpen && (
+        <div className="md:hidden px-4 pb-4 flex flex-col gap-3">
+          <Link href="/" onClick={() => setMobileOpen(false)}>Accueil</Link>
+          <Link href="/catalogue" onClick={() => setMobileOpen(false)}>Catalogue</Link>
+          <Link href="/a-propos" onClick={() => setMobileOpen(false)}>À propos</Link>
+        </div>
+      )}
     </header>
   );
 }

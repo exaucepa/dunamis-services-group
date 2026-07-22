@@ -15,13 +15,14 @@ export default function SearchBar() {
       if (query.length < 2) { setResults({products: [], categories: []}); return; }
       
       const [allProducts, allCategories] = await Promise.all([getAllProducts(), getCategories()]);
+      const term = query.toLowerCase();
       
       const filteredProducts = allProducts
-       .filter(p => p.name.toLowerCase().includes(query.toLowerCase()))
+       .filter(p => (p.name || "").toLowerCase().includes(term)) // <-- CORRIGÉ
        .slice(0, 5); // Max 5 produits
       
       const filteredCategories = allCategories
-       .filter(c => c.name.toLowerCase().includes(query.toLowerCase()))
+       .filter(c => (c.name || "").toLowerCase().includes(term)) // <-- CORRIGÉ
        .slice(0, 3); // Max 3 catégories
 
       setResults({products: filteredProducts, categories: filteredCategories});
@@ -41,9 +42,15 @@ export default function SearchBar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [])
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if(query) window.location.href = `/catalogue?search=${query}`;
+    setShowResults(false);
+  }
+
   return (
     <div ref={searchRef} className="relative w-full max-w-xl">
-      <div className="relative">
+      <form onSubmit={handleSubmit} className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20}/>
         <input
           type="text"
@@ -51,10 +58,10 @@ export default function SearchBar() {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.length > 1 && setShowResults(true)}
           placeholder="Recher un produit, une catégorie..."
-          className="w-full pl-10 pr-10 py-3 border rounded-full bg-gray-100 dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full pl-10 pr-10 py-3 border rounded-full bg-gray-100 dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
         />
-        {query && <button onClick={() => setQuery("")}><X className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={20}/></button>}
-      </div>
+        {query && <button type="button" onClick={() => setQuery("")}><X className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={20}/></button>}
+      </form>
 
       {showResults && (results.products.length > 0 || results.categories.length > 0) && (
         <div className="absolute top-14 w-full bg-white dark:bg-zinc-900 shadow-2xl rounded-2xl p-4 z-50 max-h-96 overflow-y-auto">
@@ -63,7 +70,7 @@ export default function SearchBar() {
             <div className="mb-4">
               <h3 className="font-bold text-sm text-gray-500 mb-2">CATÉGORIES</h3>
               {results.categories.map(c => (
-                <Link key={c.id} href={`/catalogue?cat=${c.id}`} onClick={() => setShowResults(false)} className="block p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg">
+                <Link key={c.id} href={`/catalogue?cat=${c.name}`} onClick={() => setShowResults(false)} className="block p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg"> {/* <-- CORRIGÉ: on envoie le nom */}
                   {c.name}
                 </Link>
               ))}
@@ -78,7 +85,7 @@ export default function SearchBar() {
                   <img src={p.image} className="w-12 h-12 rounded object-cover"/>
                   <div>
                     <p className="font-semibold">{p.name}</p>
-                    <p className="text-blue-600 font-bold">{p.promo_price? `${p.promo_price}F` : `${p.price}F`}</p>
+                    <p className="text-purple-600 font-bold">{p.promo_price? `${p.promo_price}F : ${p.price}F}` : `${p.price}F`}</p>
                   </div>
                 </Link>
               ))}

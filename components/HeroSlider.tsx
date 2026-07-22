@@ -4,30 +4,16 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { supabase } from "../app/lib/supabase";
-
-type Slide = {
-  id: string;
-  title: string;
-  subtitle: string;
-  description: string; // on va mettre ça dans button_text pour l'instant
-  image_url: string;
-  button_text: string;
-  button_link: string;
-};
+import { getSliders, type Slider } from "../app/lib/products"; // on prend depuis products.ts
 
 export default function HeroSlider() {
-  const [slides, setSlides] = useState<Slide[]>([]);
+  const [slides, setSlides] = useState<Slider[]>([]);
   const [current, setCurrent] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchSlides = async () => {
-      const { data } = await supabase
-       .from("slides")
-       .select("*")
-       .eq("is_active", true)
-       .order("display_order");
+      const data = await getSliders(); // on utilise la fonction de products.ts
       setSlides(data || []);
       setLoading(false);
     };
@@ -45,7 +31,7 @@ export default function HeroSlider() {
   const next = () => setCurrent((prev) => (prev + 1) % slides.length);
   const prev = () => setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
 
-  if (loading) return <div className="h-[500px] bg-gray-200 animate-pulse" />; // skeleton
+  if (loading) return <div className="h-[500px] bg-gray-200 dark:bg-zinc-800 animate-pulse" />;
   if (slides.length === 0) return null;
 
   const slide = slides[current];
@@ -61,7 +47,7 @@ export default function HeroSlider() {
           transition={{ duration: 1 }}
           className="absolute inset-0"
         >
-          <img src={slide.image_url} className="w-full h-full object-cover" alt={slide.title} />
+          <img src={slide.image} className="w-full h-full object-cover" alt={slide.title} /> {/* image au lieu de image_url */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
         </motion.div>
       </AnimatePresence>
@@ -87,23 +73,14 @@ export default function HeroSlider() {
           >
             {slide.title}
           </motion.h1>
-          <motion.p
-            key={slide.id + "desc"}
-            initial={{ x: -50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="text-gray-200 text-lg max-w-xl mb-8"
-          >
-            {slide.description || "Découvrez nos produits"}
-          </motion.p>
           <motion.div
             key={slide.id + "btn"}
             initial={{ x: -50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.8 }}
+            transition={{ delay: 0.6 }}
           >
-            <Link href={slide.button_link} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition">
-              {slide.button_text}
+            <Link href={slide.link} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition"> {/* link au lieu de button_link */}
+              Découvrir
             </Link>
           </motion.div>
         </div>

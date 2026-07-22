@@ -14,21 +14,34 @@ export default function CategoryPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
-      const [allCategories, allProducts] = await Promise.all([
-        getAllCategories(),
-        getAllProducts()
-      ]);
+      try {
+        setLoading(true);
+        const [allCategories, allProducts] = await Promise.all([
+          getAllCategories(),
+          getAllProducts()
+        ]);
 
-      const currentCategory = allCategories.find(c => c.slug === slug);
-      if(currentCategory) {
+        const currentCategory = allCategories.find(c => c.slug === slug);
+       
+        if (!currentCategory) {
+          setCategoryName("Catégorie introuvable");
+          setProducts([]);
+          return; // on sort
+        }
+
         setCategoryName(currentCategory.name);
+
         const filteredProducts = allProducts.filter(
-          p => p.category_id !== undefined && p.category_id.toString() === currentCategory.id
+          p => p.category_id && p.category_id.toString() === currentCategory.id.toString()
         );
         setProducts(filteredProducts);
+
+      } catch (error) {
+        console.error(error);
+        setCategoryName("Erreur de chargement");
+      } finally {
+        setLoading(false); // <-- TOUJOURS exécuté
       }
-      setLoading(false);
     };
     fetchData();
   }, [slug]);
@@ -48,11 +61,17 @@ export default function CategoryPage() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {products.map(product => (
-            <div key={product.id} className="bg-white dark:bg-zinc-900 rounded-2xl shadow hover:shadow-xl transition p-4">
+            <Link 
+              href={`/produit/${product.id}`} // <-- CLIQUABLE MAINTENANT
+              key={product.id} 
+              className="bg-white dark:bg-zinc-900 rounded-2xl shadow hover:shadow-xl transition p-4"
+            >
               <img src={product.image} alt={product.name} className="w-full h-48 object-cover rounded-lg mb-3"/>
               <h3 className="font-semibold truncate">{product.name}</h3>
-              <p className="text-blue-600 font-bold">{product.price} FCFA</p>
-            </div>
+              <p className="text-blue-600 font-bold">
+                {product.promo_price? `${product.promo_price} FCFA` : `${product.price} FCFA`}
+              </p>
+            </Link>
           ))}
         </div>
       )}

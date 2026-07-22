@@ -1,12 +1,13 @@
 "use client";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Settings, Image, Package, Tag, Users, ShoppingBag, LogOut } from "lucide-react";
+import { Settings, Image, Package, Tag, Users, ShoppingBag, LogOut, CheckCircle } from "lucide-react"; // J'ai ajouté CheckCircle
 import Link from "next/link";
 
 const adminCards = [
+  { title: "Validations Paiements", icon: CheckCircle, color: "bg-red-100", href: "/admin/validations" }, // NOUVEAU
   { title: "Paramètres du Site", icon: Settings, color: "bg-blue-100", href: "/admin/parametres" },
-  { title: "Gérer Slides", icon: Image, color: "bg-pink-100", href: "/admin/slides" }, // <-- Corrigé pour slides
+  { title: "Gérer Slides", icon: Image, color: "bg-pink-100", href: "/admin/slides" },
   { title: "Gérer Produits", icon: Package, color: "bg-green-100", href: "/admin/produits" },
   { title: "Gérer Promos", icon: Tag, color: "bg-yellow-100", href: "/admin/promos" },
   { title: "Gérer Groupages", icon: Users, color: "bg-purple-100", href: "/admin/groupages" },
@@ -39,7 +40,7 @@ export default function AdminDashboard() {
           <Link
             key={card.title}
             href={card.href}
-            className={`p-6 ${card.color} dark:bg-zinc-800 rounded-2xl shadow hover:shadow-lg transition cursor-pointer hover:-translate-y-1`   }
+            className={`p-6 ${card.color} dark:bg-zinc-800 rounded-2xl shadow hover:shadow-lg transition cursor-pointer hover:-translate-y-1`}
           >
             <card.icon size={32} className="mb-4"/>
             <h2 className="text-xl font-bold">{card.title}</h2>
