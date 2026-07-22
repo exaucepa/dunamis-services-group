@@ -1,11 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
 import { getAllProducts, supabase } from "../app/lib/products";
-import { type Product } from "../app/lib/products";
+import { type Products } from "../app/lib/products";
 import { Tag, Save } from "lucide-react";
 
 export default function AdminPromoPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Products[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { 

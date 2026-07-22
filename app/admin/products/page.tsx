@@ -24,11 +24,14 @@ export default function AdminProduits() {
     const file = e.target.image.files[0];
     const imageUrl = await uploadProductsImages(file);
     await createProducts({
-    ...prod,
+      ...prod,
       price: Number(prod.price),
-      promo_price: prod.promo_price? Number(prod.promo_price) : null,
+      promo_price: prod.promo_price ? Number(prod.promo_price) : null,
       stock: Number(prod.stock),
       image: imageUrl,
+      promo_end_date: null,
+      images: [],
+      short_description: ""
     });
     setShowForm(false); setLoading(false); fetchProducts();
   }

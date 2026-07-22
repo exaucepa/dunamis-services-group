@@ -41,17 +41,9 @@ const mapProducts = (p: any): Products | null => {
   }
 };
 
-export const getAllProducts = async (): Promise<Products[]> => {
-  const { data } = await supabase.from("products").select("*, category:categories(name)").order("created_at", { ascending: false });
-  return (data || []).map(mapProducts).filter(Boolean) as Products[];
-};
-
 export const getProductsById = async (id: string): Promise<Products | null> => {
   const { data, error } = await supabase.from("products").select("*, category:categories(name)").eq("id", id).single();
-  if(error) {
-    console.error("Supabase getProductsById Error:", error.message)
-    return null
-  }
+  if(error) { console.error("Supabase getProductsById Error:", error.message); return null }
   return data? mapProducts(data) : null;
 };
 
@@ -62,146 +54,123 @@ export const getFeaturedProducts = async (): Promise<Products[]> => {
 
 export const formatPrice = (price: number) => price.toString().replace(/\B(?=(\d{3})+(?!\d))/g,".");
 
-// ===== SLIDERS CRUD =====
-export const getSliders = async (): Promise<Slider[]> => {
-  const { data, error } = await supabase.from("sliders").select("*").eq("is_active", true).order("display_order");
-  if (error) { console.error("Erreur getSliders:", error); return []; }
-  return data || [];
-};
+// ===== PROMOS =====
+export async function getActivePromos(): Promise<Products[]> {
+  const now = new Date().toISOString();
+  const { data, error } = await supabase.from('products').select('*, category:categories(name)').not('promo_price', 'is', null).not('promo_end_date', 'is', null).gt('promo_end_date', now).order('promo_end_date', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(mapProducts).filter(Boolean) as Products[];
+}
 
-export const getAllSlidersAdmin = async (): Promise<Slider[]> => {
-  const { data, error } = await supabase.from("sliders").select("*").order("display_order");
-  if (error) { console.error("Erreur getAllSlidersAdmin:", error); return []; }
-  return data || [];
-};
-
-export const createSlider = async (slider: Omit<Slider, 'id'>) => {
-  const { data, error } = await supabase.from("sliders").insert(slider).select().single();
+export async function setProductsPromo(productId: string, promo_price: number, promo_end_date: string) {
+  const { data, error } = await supabase.from('products').update({ promo_price, promo_end_date }).eq('id', productId).select().single();
   if (error) throw error;
   return data;
-};
+}
 
-export const updateSlider = async (id: number, updates: Partial<Slider>) => {
-  const { data, error } = await supabase.from("sliders").update(updates).eq("id", id).select().single();
+export async function removeProductPromo(productId: string) {
+  const { data, error } = await supabase.from('products').update({ promo_price: null, promo_end_date: null }).eq('id', productId).select().single();
   if (error) throw error;
   return data;
-};
+}
 
-export const deleteSlider = async (id: number) => {
-  const { error } = await supabase.from("sliders").delete().eq("id", id);
+// ===== CRUD PRODUITS =====
+export async function getAllProducts(): Promise<Products[]> {
+  const { data, error } = await supabase.from('products').select('*, category:categories(name)').order('created_at', { ascending: false });
   if (error) throw error;
-};
+  return (data || []).map(mapProducts).filter(Boolean) as Products[];
+}
 
-export const uploadSliderImage = async (file: File) => {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `hero/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-  const { data, error } = await supabase.storage.from('hero').upload(fileName, file, { upsert: false });
+export async function createProducts(product: Omit<Products, 'id' | 'category' | 'reviews_count' | 'rating'>) {
+  const { data, error } = await supabase.from('products').insert([product]).select().single();
   if (error) throw error;
-  const { data: urlData } = supabase.storage.from('hero').getPublicUrl(data.path);
-  return urlData.publicUrl;
-};
+  return data;
+}
+
+export async function updateProducts(id: string, updates: Partial<Products>) {
+  const { data, error } = await supabase.from('products').update(updates).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteProducts(id: string) {
+  const { error } = await supabase.from('products').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// ===== UPLOAD =====
+export async function uploadProductsImages(file: File): Promise<string> {
+  const fileName = `products/${Date.now()}-${file.name}`;
+  const { data, error } = await supabase.storage.from("products").upload(fileName, file);
+  if (error) throw error;
+  const { data: { publicUrl } } = supabase.storage.from("products").getPublicUrl(data.path);
+  return publicUrl;
+}
 
 // ===== GROUPAGE =====
 export const createGroupage = async (data: Partial<Groupage>) => {
   const { data: d, error } = await supabase.from("groupages").insert([{
-    product_id: data.product_id, objectif_participants: data.objectif_participants,
-    participants: data.participants || 1, prix_groupe: data.prix_groupe,
-    date_fin_groupage: data.date_fin_groupage, active: true
+    product_id: data.product_id, 
+    objectif_participants: data.objectif_participants,
+    participants: data.participants || 1, 
+    prix_groupe: data.prix_groupe,
+    date_fin_groupage: data.date_fin_groupage, 
+    active: true
   }]).select().single();
   if (error) throw error;
   return d;
 };
 
+// RECUPER LE GROUPAGE D'UN PRODUIT SPECIFIQUE
+export async function getGroupageByProductsId(productId: string): Promise<Groupage | null> {
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('groupages')
+    .select('*')
+    .eq('product_id', productId)
+    .eq('active', true)
+    .gt('date_fin_groupage', now) // seulement si pas encore fini
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error && error.code !== 'PGRST116') { // PGRST116 = "pas trouvé" c'est normal
+    console.error("Erreur getGroupageByProductsId:", error); 
+    return null 
+  }
+  return data;
+}
+
+// RECUPER TOUS LES GROUPAGES EN COURS POUR LA PAGE D'ACCUEIL
 export async function getGroupagesEnCours() {
   const now = new Date().toISOString();
   const { data, error } = await supabase
-.from('groupages')
-.select('*, products (id, name, price, promo_price, image, images, description, stock, category_id, featured, short_description, promo_end_date, category:categories(name))')
-.eq('active', true)
-.gt('date_fin_groupage', now)
-.order('date_fin_groupage', { ascending: true });
+    .from('groupages')
+    .select('*, products(*)') // on récupère aussi les infos du produit
+    .eq('active', true)
+    .gt('date_fin_groupage', now)
+    .order('date_fin_groupage', { ascending: true });
 
   if (error) { console.error(error); return []; }
-  return (data || []).filter(g => g.participants < g.objectif_participants).map(g => ({
-...g,
-    products: mapProducts(g.products) || { id: 'deleted', name: 'Produit supprimé', image: '/placeholder.png', price: 0, images:[], description:'', stock:0, short_description:'', rating:0, reviews_count:0, promo_end_date:null }
-  }));
+  
+  return (data || [])
+    .filter(g => g.participants < g.objectif_participants) // pas encore atteint
+    .map(g => ({...g, products: mapProducts(g.products)}));
 }
-export const getActiveGroupages = getGroupagesEnCours;
+export const getActiveGroupages = getGroupagesEnCours; // alias
 
-// FAKE DATA pour l'instant
-const fakeGroupages: Groupage[] = [
-  {
-    id: "4",
-    product_id: "be1083e4-86d8-4f7e-80e7-925df4c36eee",
-    prix_groupe: 29998,
-    objectif_participants: 10,
-    participants: 1,
-    date_fin_groupage: "2026-07-22 10:21:21.761695+00",
-    active: true
-  }
-]
 
-export async function getGroupageByProductsId(productId: string): Promise<Groupage | null> {
-  await new Promise(resolve => setTimeout(resolve, 200));
-  return fakeGroupages.find(g => g.product_id === productId) || null;
-}
-
-// ===== UPLOAD =====
-export const uploadProductsImage = async (file: File, p0: string) => {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `products/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-  const { data, error } = await supabase.storage.from('products').upload(fileName, file, { upsert: false });
-  if (error) throw error;
-  const { data: urlData } = supabase.storage.from('products').getPublicUrl(data.path);
-  return urlData.publicUrl;
-};
-
-// ===== CATEGORIES CRUD =====
+// ===== CATEGORIES =====
+export async function getCategories(): Promise<Category[]> { const { data, error } = await supabase.from('categories').select('*').order('name'); if (error) throw error; return data || []; }
 export async function createCategory(category: Omit<Category, 'id' | 'created_at'>) { const { data, error } = await supabase.from('categories').insert(category).select().single(); if (error) throw error; return data; }
 export async function updateCategory(id: number, category: Partial<Category>) { const { data, error } = await supabase.from('categories').update(category).eq('id', id).select().single(); if (error) throw error; return data; }
 export async function deleteCategory(id: number) { const { error } = await supabase.from('categories').delete().eq('id', id); if (error) throw error; }
-export async function getCategories(): Promise<Category[]> { const { data, error } = await supabase.from('categories').select('*').order('name'); if (error) throw error; return data || []; }
 
-export async function uploadProductsImages(file: File) {
-  const fileName = `products/${Date.now()}-${file.name}`;
-  const { data, error } = await supabase.storage
-    .from('products') // <- le nom de ton bucket Supabase Storage
-    .upload(fileName, file);
+// ===== SLIDERS =====
+export const getSliders = async (): Promise<Slider[]> => { const { data } = await supabase.from("sliders").select("*").eq("is_active", true).order("display_order"); return data || []; };
+export const getAllSlidersAdmin = async (): Promise<Slider[]> => { const { data } = await supabase.from("sliders").select("*").order("display_order"); return data || []; };
+export const createSlider = async (slider: Omit<Slider, 'id'>) => { const { data, error } = await supabase.from("sliders").insert(slider).select().single(); if (error) throw error; return data; };
+export const updateSlider = async (id: number, updates: Partial<Slider>) => { const { data, error } = await supabase.from("sliders").update(updates).eq("id", id).select().single(); if (error) throw error; return data; };
+export const deleteSlider = async (id: number) => { const { error } = await supabase.from("sliders").delete().eq("id", id); if (error) throw error; };
 
-  if (error) throw error;
-
-  const { data: { publicUrl } } = supabase.storage
-    .from('products')
-    .getPublicUrl(fileName);
-
-  return publicUrl;
-}
-
-export async function createProducts(product: {
-  name: string;
-  price: number;
-  promo_price?: number | null;
-  description: string;
-  image: string;
-  stock: number;
-  category_id?: number | null;
-}) {
-  const { data, error } = await supabase
-    .from('products') // <- le nom de ta table
-    .insert([{
-      name: product.name,
-      price: product.price,
-      promo_price: product.promo_price || null,
-      description: product.description,
-      images: product.image,
-      stock: product.stock,
-      category_id: product.category_id || null,
-      created_at: new Date().toISOString()
-    }])
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-}
+export { supabase };

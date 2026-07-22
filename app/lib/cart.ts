@@ -1,8 +1,8 @@
 // app/lib/cart.ts
 
-import type { Product } from "./products";
+import type { Products } from "./products";
 
-export type CartItem = Product & { quantity: number };
+export type CartItem = Products & { quantity: number };
 
 export function getCart(): CartItem[] {
   if (typeof window === "undefined") return [];
@@ -14,7 +14,7 @@ export function saveCart(cart: CartItem[]) {
   window.dispatchEvent(new Event('cartUpdated'));
 }
 
-export function addToCart(product: Product) {
+export function addToCart(product: Products) {
   const cart = getCart();
   const existing = cart.find(item => item.id === product.id);
   if (existing) existing.quantity += 1; else cart.push({ ...product, quantity: 1 });

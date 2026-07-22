@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabase";
-import { uploadProductImage } from "../../lib/products";
+import { uploadProductsImages } from "../../lib/products";
 
 export default function HeroSliderManager() {
   const [slides, setSlides] = useState<any[]>([]);
@@ -24,7 +24,7 @@ export default function HeroSliderManager() {
     if(!form.file) return alert("Ajoute une image");
     setLoading(true);
     try {
-      const image_url = await uploadProductImage(form.file);
+      const image_url = await uploadProductsImages(form.file);
       const { error } = await supabase.from("hero_slides").insert([{
         title: form.title,
         subtitle: form.subtitle,
