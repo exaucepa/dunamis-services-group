@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock } from "lucide-react";
 
-const ADMIN_PASSWORD = "dunamis2025"; // <-- Change ce mot de passe
+const ADMIN_PASSWORD = "dunamis2026"; // <-- Change ce mot de passe
 
 export default function AdminLogin() {
   const [pass, setPass] = useState("");

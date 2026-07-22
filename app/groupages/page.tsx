@@ -1,90 +1,49 @@
 "use client";
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
-import { Users, Calendar } from "lucide-react";
-import Link from "next/link";
-import { formatPrice } from "../lib/products"; // On utilise ta fonction
+import { useState, useEffect } from "react";
+import { supabase } from "..//lib/supabase";
+import { getGroupagesEnCours, formatPrice } from ".././lib/products"; // <- UTILISE LA FONCTION
+import { Plus, Trash2, Save, Users, Clock } from "lucide-react";
 
-type Groupage = {
-  id: number;
-  product_id: string;
-  objectif_participants: number;
-  participants: number;
-  prix_groupe: number;
-  date_fin_groupage: string;
-  products: { // <- jointure
-    id: string;
-    name: string;
-    image: string;
-    price: number;
-  }
-};
+export default function ManageGroupages() {
+  const [groupages, setGroupages] = useState<any[]>([]);
 
-export default function GroupagesPage() {
-  const [groupages, setGroupages] = useState<Groupage[]>([]);
+  useEffect(() => { fetchGroupages(); }, []);
 
-  useEffect(() => {
-    const fetchGroupages = async () => {
-      const { data } = await supabase
-       .from("groupages")
-       .select("*, products(id, name, image, price)") // <- Jointure produit
-       .eq("status", "en_cours") // <- C'est en_cours pas actif
-       .order("date_fin_groupage", { ascending: true });
-      setGroupages(data || []);
-    };
+  const fetchGroupages = async () => {
+    const data = await getGroupagesEnCours(); // <- UTILISE LA FONCTION QUI MARCHE
+    setGroupages(data || []);
+  };
+
+  const handleDelete = async (id: string) => {
+    if(!confirm("Supprimer ce groupage?")) return;
+    await supabase.from("groupages").delete().eq("id", id);
     fetchGroupages();
-  }, []);
-
-  const getProgress = (current: number, target: number) => {
-    if(!target) return 0;
-    return Math.min(100, (current / target) * 100);
-  }
+  };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-16">
-      <h1 className="text-4xl font-extrabold text-center mb-4">Nos Groupages en cours</h1>
-      <p className="text-center text-gray-600 dark:text-gray-400 mb-12">Rejoignez un groupage et profitez de prix réduits jusqu'à -40%</p>
+    <div className="max-w-6xl mx-auto px-4 py-12">
+      <h1 className="text-3xl font-bold mb-8 flex items-center gap-2"><Users/> Gérer Groupages</h1>
 
-      {groupages.length === 0 && (
-        <p className="text-center text-gray-500">Aucun groupage actif pour le moment.</p>
-      )}
-
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {groupages.map((g) => (
-          <div key={g.id} className="p-6 border dark:border-zinc-800 rounded-2xl shadow-lg bg-white dark:bg-zinc-900 flex-col">
-            
-            <img src={g.products.image} className="w-full h-40 rounded-lg object-cover mb-4"/>
-            <h3 className="text-xl font-bold mb-2">{g.products.name}</h3>
-            
-            <div className="space-y-3 my-4 flex-1">
-              <div className="flex items-center gap-2 text-sm">
-                <Users size={16}/> <span>{g.participants} / {g.objectif_participants} participants</span> {/* <- CORRIGÉ */}
+      <div className="space-y-4">
+        {groupages.map((g) => {
+          const progress = (g.participants / g.objectif_participants) * 100; // <- NOMS CORRIGÉS
+          return (
+            <div key={g.id} className="p-4 border rounded-2xl bg-white dark:bg-zinc-900">
+              <div className="flex gap-4 items-center mb-3">
+                <img src={g.products?.image} className="w-20 h-20 rounded-lg object-cover"/>
+                <div className="flex-1">
+                  <h3 className="font-bold text-lg">{g.products?.name}</h3>
+                  <p className="text-sm">Participants: {g.participants}/{g.objectif_participants} | Prix Groupe: <span className="font-bold text-green-600">{formatPrice(g.prix_groupe)} FCFA</span></p> {/* <- NOMS CORRIGÉS */}
+                  <p className="text-sm flex items-center gap-1"><Clock size={14}/> Fin: {new Date(g.date_fin_groupage).toLocaleString()}</p>
+                </div>
+                <button onClick={() => handleDelete(g.id)} className="p-2 bg-red-600 text-white rounded-lg"><Trash2 size={18}/></button>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar size={16}/> <span>Fin le {new Date(g.date_fin_groupage).toLocaleDateString('fr-FR')}</span>
-              </div>
-              <div className="flex items-center gap-2 text-lg font-bold text-purple-600"> {/* <- Couleur DUNAMIS */}
-                <span>{formatPrice(g.prix_groupe)} FCFA</span> {/* <- FCFA */}
-                <span className="text-sm line-through text-gray-400">{formatPrice(g.products.price)} FCFA</span>
+              <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-2">
+                <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${progress}%` }}></div>
               </div>
             </div>
-
-            {/* BARRE DE PROGRESSION */}
-            <div className="space-y-2 mb-4">
-              <div className="w-full bg-gray-200 rounded-full h-3 dark:bg-zinc-700">
-                <div 
-                  className="bg-purple-600 h-3 rounded-full transition-all duration-500" // <- violet
-                  style={{ width: `${getProgress(g.participants, g.objectif_participants)}%` }} // <- CORRIGÉ
-                ></div>
-              </div>
-              <p className="text-right text-sm font-bold">{getProgress(g.participants, g.objectif_participants).toFixed(0)}% atteint</p>
-            </div>
-
-            <Link href={`/groupage/${g.id}`} className="w-full bg-purple-700 text-white text-center py-3 rounded-xl font-bold hover:bg-purple-800 transition">
-              Participer
-            </Link>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )

@@ -6,7 +6,7 @@ import { Plus, Trash2, Save, Users, Clock } from "lucide-react";
 export default function ManageGroupages() {
   const [groupages, setGroupages] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
-  const [form, setForm] = useState<any>({ target_quantity: 10, status: 'en_cours' });
+  const [form, setForm] = useState<any>({ objectif_participants: 10, status: 'en_cours' });
 
   useEffect(() => { fetchGroupages(); fetchProducts(); }, []);
 
@@ -23,9 +23,9 @@ export default function ManageGroupages() {
   };
 
   const handleSave = async () => {
-    if(!form.product_id ||!form.group_price ||!form.date_fin_groupage) return alert("Produit, Prix Groupe et Date Fin obligatoires");
+    if(!form.product_id ||!form.prix_groupe ||!form.date_fin_groupage) return alert("Produit, Prix Groupe et Date Fin obligatoires");
     await supabase.from("groupages").insert(form);
-    setForm({ target_quantity: 10, status: 'en_cours' }); fetchGroupages();
+    setForm({ objectif_participants: 10, status: 'en_cours' }); fetchGroupages();
   };
 
   const handleDelete = async (id: string) => {
@@ -45,8 +45,8 @@ export default function ManageGroupages() {
             <option value="">Choisir un Produit</option>
             {products.map(p => <option key={p.id} value={p.id}>{p.name} - {p.price} FCFA</option>)}
           </select>
-          <input type="number" placeholder="Prix Groupe Ex: 25000" value={form.group_price || ''} onChange={e => setForm({...form, group_price: +e.target.value})} className="p-3 border rounded-lg dark:bg-zinc-800"/>
-          <input type="number" placeholder="Objectif Qté Ex: 10" value={form.target_quantity || ''} onChange={e => setForm({...form, target_quantity: +e.target.value})} className="p-3 border rounded-lg dark:bg-zinc-800"/>
+          <input type="number" placeholder="Prix Groupe Ex: 25000" value={form.prix_groupe || ''} onChange={e => setForm({...form, prix_groupe: +e.target.value})} className="p-3 border rounded-lg dark:bg-zinc-800"/>
+          <input type="number" placeholder="Objectif Qté Ex: 10" value={form.objectif_participants || ''} onChange={e => setForm({...form, objectif_participants: +e.target.value})} className="p-3 border rounded-lg dark:bg-zinc-800"/>
           <input type="datetime-local" value={form.date_fin_groupage || ''} onChange={e => setForm({...form, date_fin_groupage: e.target.value})} className="p-3 border rounded-lg dark:bg-zinc-800"/>
         </div>
         <button onClick={handleSave} className="w-full flex items-center justify-center gap-2 bg-green-700 text-white px-6 py-3 rounded-xl font-bold hover:bg-green-800">
@@ -56,14 +56,14 @@ export default function ManageGroupages() {
 
       <div className="space-y-4">
         {groupages.map((g) => {
-          const progress = (g.current_quantity / g.target_quantity) * 100;
+          const progress = (g.current_quantity / g.objectif_participants) * 100;
           return (
             <div key={g.id} className="p-4 border rounded-2xl bg-white dark:bg-zinc-900">
               <div className="flex gap-4 items-center mb-3">
                 <img src={g.products?.image} className="w-20 h-20 rounded-lg object-cover"/>
                 <div className="flex-1">
                   <h3 className="font-bold text-lg">{g.products?.name}</h3>
-                  <p className="text-sm">Participants: {g.current_quantity}/{g.target_quantity} | Prix Groupe: <span className="font-bold text-green-600">{g.group_price} FCFA</span></p>
+                  <p className="text-sm">Participants: {g.current_quantity}/{g.objectif_participants} | Prix Groupe: <span className="font-bold text-green-600">{g.prix_groupe} FCFA</span></p>
                   <p className="text-sm flex items-center gap-1"><Clock size={14}/> Fin: {new Date(g.date_fin_groupage).toLocaleString()}</p>
                   <span className={`text-xs px-2 py-1 rounded-full ${g.status === 'en_cours' ? 'bg-blue-100 text-blue-700' : 'bg-gray-200'}`}>{g.status}</span>
                 </div>

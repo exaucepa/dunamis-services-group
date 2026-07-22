@@ -8,10 +8,10 @@ export default function GroupageCard({ groupage }: { groupage: any }) {
   const product = groupage.products; // attention c'est products avec s à cause du join
   if (!product) return null;
   
-  const progress = Math.min((groupage.current_quantity / groupage.target_quantity) * 100, 100);
+  const progress = Math.min((groupage.current_quantity / groupage.objectif_participants) * 100, 100);
   
   // LES 3 BLOQUAGES
-  const isFull = groupage.current_quantity >= groupage.target_quantity;
+  const isFull = groupage.current_quantity >= groupage.objectif_participants;
   const isExpired = new Date(groupage.date_fin_groupage) < new Date();
   const isInactive = groupage.status !== 'en_cours';
   const isDisabled = joining || isFull || isExpired || isInactive;
@@ -46,12 +46,12 @@ export default function GroupageCard({ groupage }: { groupage: any }) {
       
       <div className="flex justify-between items-center mb-3">
         <p className="text-sm line-through text-gray-400">{product.price} FCFA</p>
-        <p className="text-2xl font-bold text-green-600">{groupage.group_price} FCFA</p>
+        <p className="text-2xl font-bold text-green-600">{groupage.prix_groupe} FCFA</p>
       </div>
 
       <div className="mb-3">
         <div className="flex justify-between text-sm mb-1">
-          <span className="flex items-center gap-1"><Users size={14}/>{groupage.current_quantity}/{groupage.target_quantity} participants</span>
+          <span className="flex items-center gap-1"><Users size={14}/>{groupage.current_quantity}/{groupage.objectif_participants} participants</span>
           <span className="flex items-center gap-1"><Clock size={14}/>{new Date(groupage.date_fin_groupage).toLocaleDateString()}</span>
         </div>
         <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-2.5">

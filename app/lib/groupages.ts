@@ -4,9 +4,9 @@ export interface Groupage {
   id: string;
   product_id: string;
   title: string;
-  target_quantity: number;
+  objectif_participants: number;
   current_quantity: number;
-  group_price: number;
+  prix_groupe: number;
   date_fin_groupage: string;
   statut: 'recrutement' | 'commande_fournisseur' | 'en_transit' | 'arrivee_togo' | 'livraison';
   created_at: string;
