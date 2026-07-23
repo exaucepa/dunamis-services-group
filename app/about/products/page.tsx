@@ -3,30 +3,29 @@ import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { Plus, Pencil, Trash2, Search, Loader2, Upload } from "lucide-react"
 import Image from "next/image"
-import { getAllProductsForAdmin, 
-  deleteProduct,  createProduct,
-  updateProduct,
-  uploadProductImage,
-  uploadProductImages,
+import { getAllProducts, 
+  deleteProducts,  createProducts,
+  updateProducts,
+  uploadProductsImages,
   getCategories,
-  type Product,
-  type Category
+  type Products,
+  type Category,
 } from "../../lib/products" // <-- utilise @ pour être sûr
 import AdminProductForm from "../../../components/AdminProductForm"
 
 export default function AdminProductsPage() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [filtered, setFiltered] = useState<Product[]>([])
+  const [products, setProducts] = useState<Products[]>([])
+  const [filtered, setFiltered] = useState<Products[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   
   const [showForm, setShowForm] = useState(false)
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [editingProduct, setEditingProduct] = useState<Products  | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const fetchProducts = async () => {
     setLoading(true)
-    const data = await getAllProductsForAdmin() // <-- utiliser la version Admin pour avoir tout
+    const data = await getAllProducts() // <-- utiliser la version Admin pour avoir tout
     setProducts(data)
     setFiltered(data)
     setLoading(false)
@@ -50,7 +49,7 @@ export default function AdminProductsPage() {
     if(!confirm("Supprimer ce produit ?")) return
     try {
       setDeletingId(id)
-      await deleteProduct(id)
+      await deleteProducts(id)
       fetchProducts()
     } catch(err: any) {
       alert("Erreur: " + err.message)
@@ -59,7 +58,7 @@ export default function AdminProductsPage() {
     }
   }
 
-  const handleOpenForm = (product: Product | null = null) => {
+  const handleOpenForm = (product: Products | null = null) => {
     setEditingProduct(product)
     setShowForm(true)
   }

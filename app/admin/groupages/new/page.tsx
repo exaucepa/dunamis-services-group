@@ -2,11 +2,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getAllProducts, createGroupage, formatPrice } from "../../../lib/products";
-import type { Product } from "../../../lib/products";
+import type { Products } from "../../../lib/products";
 import { Users, Calendar, DollarSign } from "lucide-react";
 
 export default function NewGroupagePage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Products[]>([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const [form, setForm] = useState({ product_id: "", prix_groupe: 0, objectif_participants: 10, date_fin_groupage: "", active: true });

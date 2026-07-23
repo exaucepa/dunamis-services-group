@@ -99,7 +99,7 @@ export async function deleteProducts(id: string) {
 }
 
 // ===== UPLOAD =====
-export async function uploadProductsImages(file: File): Promise<string> {
+export async function uploadProductsImages(file: File, p0: string): Promise<string> {
   const fileName = `products/${Date.now()}-${file.name}`;
   const { data, error } = await supabase.storage.from("products").upload(fileName, file);
   if (error) throw error;
@@ -173,4 +173,42 @@ export const createSlider = async (slider: Omit<Slider, 'id'>) => { const { data
 export const updateSlider = async (id: number, updates: Partial<Slider>) => { const { data, error } = await supabase.from("sliders").update(updates).eq("id", id).select().single(); if (error) throw error; return data; };
 export const deleteSlider = async (id: number) => { const { error } = await supabase.from("sliders").delete().eq("id", id); if (error) throw error; };
 
+export async function uploadSliderImage(file: File) {
+  const fileExt = file.name.split('.').pop()
+  const fileName = `${Date.now()}.${fileExt}`
+  const filePath = `sliders/${fileName}`  
+
+  const { data, error } = await supabase.storage
+    .from('images') // le nom de ton bucket
+    .upload(filePath, file)
+
+  if (error) throw error
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('images')
+    .getPublicUrl(filePath)
+
+  return publicUrl
+}
+
 export { supabase };
+
+export async function searchProducts(query: string): Promise<Products[]> {
+  if (!query || query.trim() === "") {
+    return []
+  }
+
+  const { data, error } = await supabase
+    .from('products') // le nom de ta table
+    .select('*')
+    .ilike('name', `%${query}%`) // recherche insensible à la casse
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  if (error) {
+    console.error("Erreur searchProducts:", error)
+    throw error
+  }
+
+  return data as Products[]
+}

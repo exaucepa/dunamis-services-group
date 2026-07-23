@@ -1,14 +1,14 @@
 "use client"
 import { useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
-import { searchProducts, type Product } from "../lib/products"
+import { searchProducts, type Products } from "../lib/products"
 import ProductCard from "../../components/ProductCard" // utilise ta carte produit existante
 import { Loader2, Search } from "lucide-react"
 
 export default function SearchPage() {
   const searchParams = useSearchParams()
   const query = searchParams.get("q") || ""
-  const [products, setProducts] = useState<Product[]>([])
+  const [products, setProducts] = useState<Products[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

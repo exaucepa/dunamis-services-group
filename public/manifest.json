@@ -1,0 +1,26 @@
+{
+  "name": "DUNAMIS SERVICES GROUP",
+  "short_name": "DSG_E-STORE",
+  "description": "Découvrez des milliers de produits de qualité au meilleur prix. Livraison rapide partout au Togo. Mode, Électronique, Maison et bien plus sur BoutikPro.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2020AF",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

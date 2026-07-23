@@ -3,12 +3,12 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { getAllCategories } from "../../lib/categories";
-import { getAllProducts, type Product } from "../../lib/products";
+import { getAllProducts, type Products } from "../../lib/products";
 import { Loader2 } from "lucide-react";
 
 export default function CategoryPage() {
   const { slug } = useParams();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Products[]>([]);
   const [categoryName, setCategoryName] = useState("");
   const [loading, setLoading] = useState(true);
 

@@ -1,24 +1,24 @@
-"use client";
-import { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation"; // <-- AJOUT useRouter
+ "use client";
+import { useState, useEffect, Suspense } from "react"; // <-- AJOUT Suspense
+import { useSearchParams, useRouter } from "next/navigation"; 
 import { getAllProducts, getCategories } from "../lib/products";
 import ProductCard from "../../components/ProductCard";
-import type { Product, Category } from "../lib/products";
+import type { Products, Category } from "../lib/products";
 import { Search, Filter, Loader2 } from "lucide-react";
 
-export default function CataloguePage() {
+function CatalogueContent() { // <-- 1. Ton code est maintenant ici
   const searchParams = useSearchParams();
   const router = useRouter();
   const urlSearch = searchParams.get('search') || ""; 
-  const urlCat = searchParams.get('cat') || "all"; // <-- LIT LA CATÉGORIE AUSSI
+  const urlCat = searchParams.get('cat') || "all";
 
-  const [allProducts, setAllProducts] = useState<Product[]>([]); 
-  const [products, setProducts] = useState<Product[]>([]); 
+  const [allProducts, setAllProducts] = useState<Products[]>([]); 
+  const [products, setProducts] = useState<Products[]>([]); 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [searchTerm, setSearchTerm] = useState(urlSearch);
-  const [selectedCategory, setSelectedCategory] = useState(urlCat); // <-- Initialise avec l'URL
+  const [selectedCategory, setSelectedCategory] = useState(urlCat);
 
   useEffect(() => {
     async function loadData() {
@@ -39,12 +39,11 @@ export default function CataloguePage() {
     loadData();
   }, []);
 
-  // A chaque fois que searchTerm ou categorie change, on filtre ET on met à jour l'URL
   useEffect(() => {
     let filtered = allProducts;
 
     if (selectedCategory!== "all") {
-      filtered = filtered.filter(p => (p.category || "") === selectedCategory); // <-- Sécurisé
+      filtered = filtered.filter(p => (p.category || "") === selectedCategory);
     }
 
     if (searchTerm) {
@@ -57,7 +56,6 @@ export default function CataloguePage() {
 
     setProducts(filtered);
 
-    // Met à jour l'URL sans recharger la page
     const params = new URLSearchParams();
     if(searchTerm) params.set('search', searchTerm);
     if(selectedCategory !== "all") params.set('cat', selectedCategory);
@@ -65,7 +63,6 @@ export default function CataloguePage() {
 
   }, [searchTerm, selectedCategory, allProducts, router]);
 
-  // Si on arrive de la loupe du header avec ?search=... ou ?cat=...
   useEffect(() => {
     setSearchTerm(urlSearch);
     setSelectedCategory(urlCat);
@@ -84,9 +81,7 @@ export default function CataloguePage() {
       <h1 className="text-4xl font-extrabold mb-2">Catalogue Complet</h1>
       <p className="text-gray-500 mb-10">{products.length} produits trouvés</p>
 
-      {/* BARRE DE FILTRE */}
       <div className="flex flex-col md:flex-row gap-4 mb-10">
-        {/* RECHERCHE LOCALE */}
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20}/>
           <input
@@ -98,7 +93,6 @@ export default function CataloguePage() {
           />
         </div>
 
-        {/* FILTRE CATEGORIE */}
         <div className="relative">
           <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
           <select
@@ -112,7 +106,6 @@ export default function CataloguePage() {
         </div>
       </div>
 
-      {/* LA LOOP */}
       {products.length === 0? (
         <div className="text-center py-20">
           <p className="text-xl font-bold">Aucun produit trouvé 😕</p>
@@ -125,4 +118,12 @@ export default function CataloguePage() {
       )}
     </div>
   );
+}
+
+export default function CataloguePage() { // <-- 2. C'est lui qui wrap
+  return (
+    <Suspense fallback={<div className="max-w-7xl mx-auto px-4 py-20 text-center">Chargement du catalogue...</div>}>
+      <CatalogueContent />
+    </Suspense>
+  )
 }

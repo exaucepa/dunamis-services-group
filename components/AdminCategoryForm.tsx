@@ -3,7 +3,7 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, Upload, Loader2, Image as ImageIcon } from "lucide-react"
 import Image from "next/image"
-import { createCategory, updateCategory, uploadProductImage } from "../app/lib/products"
+import { createCategory, updateCategory, uploadProductsImages } from "../app/lib/products"
 import type { Category } from "../app/lib/products"
 
 interface Props { category?: Category | null; onClose: () => void; onSuccess: () => void }
@@ -25,7 +25,7 @@ export default function AdminCategoryForm({ category, onClose, onSuccess }: Prop
     const file = e.target.files?.[0]; if (!file) return;
     try {
       setUploading(true)
-      const url = await uploadProductImage(file)
+      const url = await uploadProductsImages(file, "categories")
       setFormData(prev => ({...prev, image: url }))
     } catch (err: any) { alert("Erreur upload: " + err.message) }
     finally { setUploading(false) }

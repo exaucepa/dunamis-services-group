@@ -1,15 +1,15 @@
 "use client";
 import { SetStateAction, useEffect, useState } from "react";
-import { getProductsOnPromo, type Product } from "../lib/products";
+import { getActivePromos, type Products } from "../lib/products";
 import ProductCard from "../../components/ProductCard";
 import { Loader2, Flame } from "lucide-react";
 
 export default function FlashPromoPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Products[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getProductsOnPromo().then((data: SetStateAction<Product[]>) => { setProducts(data); setLoading(false); });
+    getActivePromos().then((data: SetStateAction<Products[]>) => { setProducts(data); setLoading(false); });
   }, []);
 
   if (loading) return <div className="flex justify-center p-10"><Loader2 className="animate-spin" /></div>

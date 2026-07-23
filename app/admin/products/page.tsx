@@ -22,7 +22,7 @@ export default function AdminProduits() {
   const handleSubmit = async (e: any) => {
     e.preventDefault(); setLoading(true);
     const file = e.target.image.files[0];
-    const imageUrl = await uploadProductsImages(file);
+    const imageUrl = await uploadProductsImages(file, "products");
     await createProducts({
       ...prod,
       price: Number(prod.price),

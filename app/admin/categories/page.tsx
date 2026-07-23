@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getCategories, createCategory, updateCategory, deleteCategory, uploadProductImage, type Category } from "../..//lib/products";
+import { getCategories, createCategory, updateCategory, deleteCategory, uploadProductsImages, type Category } from "../..//lib/products";
 import { Plus, Loader2, X, Trash, Edit, ArrowLeft, Tag } from "lucide-react";
 
 export default function AdminCategoriesPage() {
@@ -34,7 +34,7 @@ export default function AdminCategoriesPage() {
   
   // 1. Upload seulement si y'a un nouveau fichier
   if (imageFile) {
-    url = await uploadProductImage(imageFile, "categories");
+    url = await uploadProductsImages(imageFile, "categories");
   }
 
   // 2. On envoie UN SEUL objet avec tout dedans

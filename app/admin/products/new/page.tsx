@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react'
 import { supabase } from "../../../lib/supabase";
-import { uploadProductImage } from "../../../lib/products"; // <- AJOUT
+import { uploadProductsImages } from "../../../lib/products"; // <- AJOUT
 import { useRouter } from "next/navigation";
 
 export default function NewProductPage() {
@@ -24,7 +24,7 @@ export default function NewProductPage() {
     if(!file) return;
     setUploading(true);
     try {
-      const url = await uploadProductImage(file, 'products'); // <- UTILISE LA FONCTION
+      const url = await uploadProductsImages(file, 'products'); // <- UTILISE LA FONCTION
       if(index === null){ setForm({...form, image: url}); }
       else { const newImages = [...form.images]; newImages[index] = url; setForm({...form, images: newImages}); }
     } catch(err: any) { alert("Upload erreur: " + err.message); }

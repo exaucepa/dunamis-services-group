@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import { addProduct,  uploadImage } from "../app/lib/products";
+import { createProducts,  uploadProductsImages } from "../app/lib/products";
 import type { Category } from "../app/lib/categories";
-import {getCategories} from "../app/lib/categories";
+import {getAllCategories} from "../app/lib/categories";
 import { Loader2 } from "lucide-react"; // pour le spinner
 
 export default function AddProduct() {
@@ -24,7 +24,7 @@ export default function AddProduct() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const data = await getCategories();
+        const data = await getAllCategories();
         setCategories(data);
       } catch (err: any) {
         setError("Impossible de charger les catégories: " + err.message);
@@ -44,18 +44,22 @@ export default function AddProduct() {
 
       // Upload image si fichier sélectionné
       if (imageFile) {
-        imageUrl = await uploadImage(imageFile);
+        // uploadProductsImages expects two arguments (file, folderName)
+        imageUrl = await uploadProductsImages(imageFile, "products");
       }
 
       if (!imageUrl) {
         throw new Error("Veuillez sélectionner une image");
       }
 
-      await addProduct({
-        ...form, image: imageUrl,
+      await createProducts({
+        ...form,
+        image: imageUrl,
+        category_id: Number(form.category_id),
         images: [],
         short_description: "",
-        long_description: ""
+        description: "",
+        promo_end_date: null
       });
       alert("Produit ajouté avec succès!");
       setForm({ name: "", price: 0, description: "", stock: 0, image: "", category_id: "" });

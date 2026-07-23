@@ -2,17 +2,17 @@
 
 import { createContext, useContext, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import type { Product } from "../lib/products" // <-- CORRIGÉ LE CHEMIN
+import type { Products } from "../lib/products" // <-- CORRIGÉ LE CHEMIN
 
-type CartItem = Product & { quantity: number }
+type CartItem = Products & { quantity: number }
 
 type CartContextType = {
   cart: CartItem[]
-  addToCart: (product: Product, quantity?: number) => void
+  addToCart: (product: Products, quantity?: number) => void
   removeFromCart: (id: string) => void
   updateQuantity: (id: string, quantity: number) => void
   clearCart: () => void
-  orderSingleProduct: (product: Product) => void
+  orderSingleProduct: (product: Products) => void
   total: number
   totalPrice: number
   totalItems: number
@@ -33,7 +33,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("cart", JSON.stringify(cart))
   }, [cart])
 
-  const addToCart = (product: Product, quantity = 1) => {
+  const addToCart = (product: Products, quantity = 1) => {
     setCart(prev => {
       const exist = prev.find(p => p.id === product.id)
       if (exist) {
@@ -54,7 +54,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const clearCart = () => setCart([])
 
-  const orderSingleProduct = (product: Product) => {
+  const orderSingleProduct = (product: Products) => {
     setCart([{...product, quantity: 1 }])
     router.push("/checkout")
   }

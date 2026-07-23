@@ -24,7 +24,7 @@ export default function HeroSliderManager() {
     if(!form.file) return alert("Ajoute une image");
     setLoading(true);
     try {
-      const image_url = await uploadProductsImages(form.file);
+      const image_url = await uploadProductsImages(form.file, "hero_slides");
       const { error } = await supabase.from("hero_slides").insert([{
         title: form.title,
         subtitle: form.subtitle,
