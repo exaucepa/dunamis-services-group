@@ -99,7 +99,7 @@ export default function CartPage() {
 
     // AJOUT 4: ON PREND LE NUMERO DEPUIS SETTINGS
     const phone = settings?.whatsapp_number || "22890667868"; // fallback
-    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`  ;
+    const whatsappUrl = `https://wa.me/${22890667868}?text=${encodeURIComponent(message)}`  ;
     window.open(whatsappUrl, '_blank');
     clearCart(); // vide le panier après commande
     updateCart();
