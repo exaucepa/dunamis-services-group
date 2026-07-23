@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next"; // <- AJOUTE Viewport
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "../context/CartContext";
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport = {
+export const viewport: Viewport = { // <- AJOUTE LE TYPE ICI
   themeColor: "#0000aa",
 };
 
@@ -27,10 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#0000aa" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="DUNAMIS" />
+        {/* SUPPRIME les meta en double, Next les gère déjà avec metadata + viewport */}
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className={inter.className}>

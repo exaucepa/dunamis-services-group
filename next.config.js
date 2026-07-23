@@ -3,10 +3,18 @@ const withPWA = require('next-pwa')({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
-  buildExcludes: [/middleware-manifest.json$/] // <- anti-bug Next 16
+  buildExcludes: [/middleware-manifest.json$/, /app-build-manifest.json$/], // <- anti bug WorkerError
+  fallbacks: {
+    document: '/offline', // optionnel mais aide
+  }
 })
 
-module.exports = withPWA({
+const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-})
+  experimental: {
+    turbo: {} // <- dit à Vercel d'utiliser turbopack sans crasher
+  }
+}
+
+module.exports = withPWA(nextConfig)
