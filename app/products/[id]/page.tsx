@@ -2,28 +2,29 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { getProductsById, getGroupageByProductsId, type Products, type Groupage } from "../../lib/products"; // EN ANGLAIS
+import { getProductsById, getGroupageByProductsId, type Products, type Groupage } from "../../lib/products";
 import { ShoppingCart, MessageCircle, Star, Users, Clock, Check, ArrowLeft } from "lucide-react";
 import Timer from "../../../components/Timer";
+import { addToCart } from "../../lib/cart"; // <- AJOUT
 
 export default function ProductsDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [selectedImage, setSelectedImage] = useState(0);
-  const [products, setProducts] = useState<Products | null>(null); // Product
+  const [products, setProducts] = useState<Products | null>(null);
   const [groupage, setGroupage] = useState<Groupage | null>(null);
   const [loading, setLoading] = useState(true);
-  const { addToCart } = useCart();
+  // const { addToCart } = useCart(); <- SUPPRIMÉ
 
   useEffect(() => {
     if(!id) return;
     setLoading(true);
-    Promise.all([getProductsById(id), getGroupageByProductsId(id)]) // getProductsById
-  .then(([prod, grp]) => {
+    Promise.all([getProductsById(id), getGroupageByProductsId(id)])
+ .then(([prod, grp]) => {
         setProducts(prod);
         setGroupage(grp);
         setLoading(false);
       })
-  .catch(() => setLoading(false));
+ .catch(() => setLoading(false));
   }, [id]);
 
   if (loading) return <p className="text-center p-10">Chargement...</p>
@@ -34,6 +35,24 @@ export default function ProductsDetailPage() {
   const allImages = [products.image,...products.images].filter(Boolean);
   const hasGroupage =!!groupage;
   const whatsappLink = `https://wa.me/22890667868?text=${encodeURIComponent(`Bonjour Dunamis, je veux commander: ${products.name} - ${new Intl.NumberFormat("fr-FR").format(displayPrice)} FCFA`)}`;
+
+  // <- NOUVELLE FONCTION
+  const handleAddToCart = () => {
+    addToCart({
+      id: products.id,
+      name: products.name,
+      price: displayPrice, // on prend le prix promo si dispo
+      image: products.image,
+      promo_end_date: null,
+      images: [],
+      description: "",
+      stock: 0,
+      short_description: "",
+      rating: 0,
+      reviews_count: 0
+    });
+    alert(`${products.name} ajouté au panier ✅`)
+  }
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto">
@@ -51,7 +70,7 @@ export default function ProductsDetailPage() {
                 <div className="prose dark:prose-invert max-w-none my-6"><h3>Description</h3><p>{products.short_description || products.description}</p></div>
                 <div className="flex items-center gap-2 text-green-600 mb-4"><Check size={18}/> <span>En stock: {products.stock} pièces</span></div>
                 <div className="flex flex-col gap-3 mt-8">
-                  <button onClick={() => addToCart(products)} disabled={products.stock <= 0} className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-lg"><ShoppingCart size={20}/> {products.stock > 0? "Ajouter au panier" : "Rupture"}</button>
+                  <button onClick={handleAddToCart} disabled={products.stock <= 0} className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-lg"><ShoppingCart size={20}/> {products.stock > 0? "Ajouter au panier" : "Rupture"}</button>
                   {hasGroupage && (<Link href={`/groupages/${groupage!.id}`} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-lg"><Users size={20}/> Rejoindre le groupage à {new Intl.NumberFormat("fr-FR").format(groupage!.prix_groupe)} FCFA</Link>)}
                   <a href={whatsappLink} target="_blank" className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-lg"><MessageCircle size={20}/> Commander sur WhatsApp</a>
                 </div>
@@ -61,6 +80,7 @@ export default function ProductsDetailPage() {
   )
 }
 
-function useCart(): { addToCart: any; } {
-  throw new Error("Function not implemented.");
-}
+// SUPPRIME TOUT ÇA
+// function useCart(): { addToCart: any; } {
+// throw new Error("Function not implemented.");
+// }
