@@ -12,7 +12,7 @@ export default function CheckoutPage() {
   const total = Number(searchParams.get('total')) || 0;
   const discount = Number(searchParams.get('discount')) || 0;
   const coupon = searchParams.get('coupon') || '';
-  const { cartItems, clearCart } = require("../../context/CartContext").useCart(); // on récupère le panier
+  const { cartItems, clearCart } = require("../lib/cart").useCart(); // on récupère le panier
 
   const [settings, setSettings] = useState<any>(null);
   const [form, setForm] = useState({ name: '', phone: '', address: '' });

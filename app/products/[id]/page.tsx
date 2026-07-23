@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { getProductsById, getGroupageByProductsId, type Products, type Groupage } from "../../lib/products"; // EN ANGLAIS
-import { useCart } from "../../../context/CartContext";
 import { ShoppingCart, MessageCircle, Star, Users, Clock, Check, ArrowLeft } from "lucide-react";
 import Timer from "../../../components/Timer";
 
@@ -60,4 +59,8 @@ export default function ProductsDetailPage() {
         </div>
     </div>
   )
+}
+
+function useCart(): { addToCart: any; } {
+  throw new Error("Function not implemented.");
 }
