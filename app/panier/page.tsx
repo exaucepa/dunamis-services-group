@@ -1,13 +1,45 @@
 "use client";
-
-import dynamic from "next/dynamic";
-import { useCart } from "../context/CartContext";
-import { formatPrice } from "../lib/products";
+import { useState, useEffect } from "react";
+import { getCart, removeFromCart, addToCart, clearCart } from ".././lib/cart";
+import { formatPrice } from ".././lib/products";
+import type { CartItem } from ".././lib/cart";
 import Link from "next/link";
 import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 
-function PanierContent() {
-  const { cart, removeFromCart, addToCart, totalPrice, totalItems } = useCart();
+export default function PanierPage() {
+  const [cart, setCart] = useState<CartItem[]>([]);
+
+  const updateCart = () => setCart(getCart());
+
+  useEffect(() => {
+    updateCart();
+    window.addEventListener('cartUpdated', updateCart);
+    window.addEventListener('storage', updateCart);
+    return () => {
+      window.removeEventListener('cartUpdated', updateCart);
+      window.removeEventListener('storage', updateCart);
+    };
+  }, []);
+
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  const increaseQty = (item: CartItem) => {
+    addToCart(item); // addToCart gère déjà +1
+  }
+
+  const decreaseQty = (item: CartItem) => {
+    if (item.quantity <= 1) {
+      removeFromCart(item.id);
+    } else {
+      const { quantity, ...product } = item;
+      removeFromCart(item.id);
+      for (let i = 0; i < item.quantity - 1; i++) {
+        addToCart(product);
+      }
+    }
+    updateCart();
+  }
 
   if (cart.length === 0) {
     return (
@@ -35,12 +67,12 @@ function PanierContent() {
                 <h3 className="font-bold text-lg">{item.name}</h3>
                 <p className="text-gray-500">{formatPrice(item.promo_price || item.price)} FCFA</p>
                 <div className="flex items-center gap-2 mt-2">
-                  <button onClick={() => addToCart(item)} className="p-1 border rounded"><Plus size={16}/></button>
+                  <button onClick={() => increaseQty(item)} className="p-1 border rounded"><Plus size={16}/></button>
                   <span className="font-bold px-2">{item.quantity}</span>
-                  <button onClick={() => removeFromCart(item.id)} className="p-1 border rounded"><Minus size={16}/></button>
+                  <button onClick={() => decreaseQty(item)} className="p-1 border rounded"><Minus size={16}/></button>
                 </div>
               </div>
-              <button onClick={() => removeFromCart(item.id)} className="text-red-500 hover:text-red-700">
+              <button onClick={() => { removeFromCart(item.id); updateCart() }} className="text-red-500 hover:text-red-700">
                 <Trash2 />
               </button>
             </div>
@@ -63,14 +95,12 @@ function PanierContent() {
               <span>{formatPrice(totalPrice)} FCFA</span>
             </div>
           </div>
-          <Link href="/checkout" className="w-full block text-center bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition">
+          <button onClick={() => { clearCart(); updateCart(); alert("Commande envoyée sur WhatsApp!") }} 
+            className="w-full block text-center bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition">
             Passer la commande
-          </Link>
+          </button>
         </div>
       </div>
     </div>
   );
 }
-
-// LA MAGIE ICI : on désactive le SSR pour cette page
-export default dynamic(() => Promise.resolve(PanierContent), { ssr: false });

@@ -2,15 +2,17 @@
 
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
-import { useCart } from "../../context/CartContext";
+import { getCart, addToCart, removeFromCart, clearCart } from "../../app/lib/cart"; // <- BON CHEMIN
+import type { CartItem } from "../../app/lib/cart";
 import { Plus, Minus, Trash2, Tag, XCircle } from "lucide-react"; 
-import { useState, useEffect } from "react"; // AJOUT useEffect
+import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase"; 
-import Link from "next/link"; // AJOUT
+import Link from "next/link";
+
 
 export default function CartPage() {
   
-  const { cartItems, removeFromCart, updateQuantity, getTotalPrice } = useCart();
+  const [cartItems, setCartItems] = useState<CartItem[]>([]); // <- STATE LOCAL
 
   // AJOUT 1: STATE POUR LE MODE COMMANDE
   const [orderMode, setOrderMode] = useState<'whatsapp' | 'database'>('whatsapp');
@@ -22,11 +24,14 @@ export default function CartPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  const subtotal = getTotalPrice();
-  const total = subtotal - discount;
+  const updateCart = () => setCartItems(getCart()); // <- FONCTION MAJ
 
-  // AJOUT 3: CHARGER LE MODE DEPUIS SUPABASE AU CHARGEMENT
   useEffect(() => {
+    updateCart();
+    window.addEventListener('cartUpdated', updateCart);
+    window.addEventListener('storage', updateCart);
+
+    // AJOUT 3: CHARGER LE MODE DEPUIS SUPABASE AU CHARGEMENT
     const fetchMode = async () => {
       const { data } = await supabase.from('settings').select('order_mode, whatsapp_number').eq('id', 1).single();
       if(data) {
@@ -35,7 +40,29 @@ export default function CartPage() {
       }
     }
     fetchMode();
+
+    return () => {
+      window.removeEventListener('cartUpdated', updateCart);
+      window.removeEventListener('storage', updateCart);
+    };
   }, []);
+
+  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0); // <- CALCUL LOCAL
+  const total = subtotal - discount;
+
+  const increaseQty = (item: CartItem) => {
+    addToCart(item);
+  }
+
+  const decreaseQty = (item: CartItem) => {
+    if (item.quantity <= 1) {
+      removeFromCart(item.id)
+    } else {
+      // hack pour décrémenter avec cart.ts
+      removeFromCart(item.id)
+      addToCart({ ...item, quantity: item.quantity - 1 } as CartItem)
+    }
+  }
 
   const applyCoupon = async () => {
     if(!couponCode) return;
@@ -71,9 +98,11 @@ export default function CartPage() {
     message += `\n*Total: ${total.toLocaleString()} FCFA*`;
 
     // AJOUT 4: ON PREND LE NUMERO DEPUIS SETTINGS
-    const phone = settings?.whatsapp_number || "";
-    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    const phone = settings?.whatsapp_number || "22890667868"; // fallback
+    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`  ;
     window.open(whatsappUrl, '_blank');
+    clearCart(); // vide le panier après commande
+    updateCart();
   }
 
   return (
@@ -95,13 +124,13 @@ export default function CartPage() {
                       <h2 className="font-bold text-xl">{product.name}</h2>
                       <p className="text-blue-700 font-bold">{product.price.toLocaleString()} FCFA</p>
                       <div className="flex items-center gap-3 mt-2">
-                        <button onClick={() => updateQuantity(product.id, product.quantity - 1)} className="p-1 border rounded-lg hover:bg-gray-100"><Minus size={16} /></button>
+                        <button onClick={() => decreaseQty(product)} className="p-1 border rounded-lg hover:bg-gray-100"><Minus size={16} /></button>
                         <span className="font-bold">{product.quantity}</span>
-                        <button onClick={() => updateQuantity(product.id, product.quantity + 1)} className="p-1 border rounded-lg hover:bg-gray-100"><Plus size={16} /></button>
+                        <button onClick={() => increaseQty(product)} className="p-1 border rounded-lg hover:bg-gray-100"><Plus size={16} /></button>
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => removeFromCart(product.id)} className="rounded-xl bg-red-600 px-4 py-2 text-white font-bold flex items-center gap-2"><Trash2 size={16}/> Supprimer</button>
+                  <button onClick={() => { removeFromCart(product.id); updateCart() }} className="rounded-xl bg-red-600 px-4 py-2 text-white font-bold flex items-center gap-2"><Trash2 size={16}/> Supprimer</button>
                 </div>
               ))}
 
