@@ -8,9 +8,17 @@ const withPWA = require('next-pwa')({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-   turbopack: {}, // <- AJOUTE ÇA pour dire à Next "je sais pour turbopack"
-  experimental: {
-    webpackBuildWorker: false, // <- FORCE WEBPACK
+  turbopack: {}, // Pour éviter l'erreur Turbopack
+
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'bfkgpthiqlsohosjouvs.supabase.co', // <- TON BUCKET SUPABASE
+        port: '',
+        pathname: '/storage/v1/object/public/**',
+      },
+    ],
   },
 }
 
