@@ -2,10 +2,11 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
-import { addToCart } from "../app/lib/cart"; // <-- NOUVEAU
+import { addToCart } from "../app/lib/cart"; 
 import { type Products, formatPrice } from "../app/lib/products"; 
 
-export default function ProductCard(product: Products) {
+// CORRECTION ICI: on destruct la prop {product}
+export default function ProductCard({ product }: { product: Products }) {
   const price = product.promo_price || product.price;
   const hasPromo = !!product.promo_price;
   const discount = hasPromo? Math.round((1 - product.promo_price! / product.price) * 100) : 0;
@@ -13,13 +14,13 @@ export default function ProductCard(product: Products) {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault(); 
     e.stopPropagation();
-    addToCart(product); // <-- Utilise la fonction globale
-    alert(`${product.name} ajouté au panier !`); // petit feedback
+    addToCart(product);
+    alert(`${product.name} ajouté au panier !`);
   }
 
   return (
     <motion.div whileHover={{ y: -5 }} className="group bg-white dark:bg-zinc-900 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition flex-col">
-      <Link href={`/products/${product.id}`} className="flex-1"> {/* <-- CORRIGÉ /produit/ */}
+      <Link href={`/products/${product.id}`} className="flex-1">
         <div className="relative">
           <img src={product.image} alt={product.name} className="w-full h-56 object-cover group-hover:scale-105 transition duration-300"/>
           {hasPromo && (
@@ -36,7 +37,7 @@ export default function ProductCard(product: Products) {
         <div className="p-4">
           <h3 className="font-bold text-lg mb-2 line-clamp-2">{product.name}</h3>
           <div className="flex items-center gap-2 mb-3">
-            <p className="text-2xl font-bold text-purple-600">{formatPrice(price)} FCFA</p> {/* <-- Couleur purple */}
+            <p className="text-2xl font-bold text-purple-600">{formatPrice(price)} FCFA</p>
             {hasPromo && <p className="text-sm line-through text-gray-400">{formatPrice(product.price)} FCFA</p>}
           </div>
         </div>

@@ -75,7 +75,7 @@ export default function SearchBar() {
             <div>
               <h3 className="font-bold text-sm text-gray-500 mb-2">PRODUITS</h3>
               {results.products.map((p) => (
-                <Link key={p.id} href={`/produit/${p.id}`} onClick={() => setShowResults(false)} className="flex items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg">
+                <Link key={p.id} href={`/products/${p.id}`} onClick={() => setShowResults(false)} className="flex items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg">
                   <img src={p.image} alt={p.name} onError={(e) => (e.currentTarget.src = "/placeholder.png")} className="w-12 h-12 rounded object-cover" />
                   <div>
                     <p className="font-semibold line-clamp-1">{p.name}</p>

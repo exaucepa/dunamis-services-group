@@ -3,8 +3,9 @@ import { useState, useEffect } from "react";
 import { getAllProducts, type Products } from "../app/lib/products";
 import Link from "next/link";
 import { Loader2, ShoppingCart } from "lucide-react";
+import { addToCart } from "../app/lib/cart"; // AJOUTÉ
 
-export default function FeaturedProducts() { // <-- PLUS ASYNC
+export default function FeaturedProducts() { 
   const [products, setProducts] = useState<Products[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -18,6 +19,11 @@ export default function FeaturedProducts() { // <-- PLUS ASYNC
     fetchFeatured();
   }, [])
 
+  const handleAddToCart = (product: Products) => {
+    addToCart(product);
+    alert(`${product.name} ajouté au panier !`);
+  }
+
   if (loading) return <div className="flex justify-center py-10"><Loader2 className="animate-spin"/></div>
 
   return (
@@ -25,21 +31,22 @@ export default function FeaturedProducts() { // <-- PLUS ASYNC
       <h2 className="text-3xl font-bold text-center mb-8">🔥 Produits Vedettes</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         {products.map(p => (
-          <div key={p.id} className="group border rounded-2xl p-4 hover:shadow-xl transition flex flex-col">
+          <div key={p.id} className="group border rounded-2xl p-4 hover:shadow-xl transition flex-col">
             <Link href={`/products/${p.id}`}>
               <img src={p.image} className="h-48 w-full object-cover rounded-lg mb-3"/>
               <h3 className="font-bold truncate">{p.name}</h3>
               <p className="text-blue-600 font-bold text-lg mb-3">
-                {p.promo_price? `${p.promo_price} FCFA` : `${p.price} FCFA`}
+                {p.promo_price? `${p.promo_price.toLocaleString()} FCFA` : `${p.price.toLocaleString()} FCFA`}
               </p>
             </Link>
             
-            {/* BOUTON AJOUTER AU PANIER - Ça ne marchait pas en Server Component */}
+            {/* CORRIGÉ ICI */}
             <button 
-              onClick={() => alert(`Ajouté: ${p.name}`)} // on branchera le vrai panier après
-              className="mt-auto w-full bg-blue-600 text-white py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-700"
+              onClick={() => handleAddToCart(p)}
+              disabled={p.stock <= 0}
+              className="mt-auto w-full bg-blue-600 disabled:bg-gray-400 text-white py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-700"
             >
-              <ShoppingCart size={16}/> Ajouter
+              <ShoppingCart size={16}/> {p.stock > 0 ? "Ajouter" : "Rupture"}
             </button>
           </div>
         ))}

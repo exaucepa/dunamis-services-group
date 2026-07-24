@@ -9,7 +9,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase"; 
 import Link from "next/link";
 
-
 export default function CartPage() {
   
   const [cartItems, setCartItems] = useState<CartItem[]>([]); // <- STATE LOCAL
@@ -89,6 +88,8 @@ export default function CartPage() {
   }
 
   const handleWhatsAppOrder = () => {
+    if (cartItems.length === 0) return;
+    
     let message = `Bonjour, je souhaite commander :\n\n`;
     cartItems.forEach(item => {
       message += `- ${item.name} x${item.quantity} = ${(item.price * item.quantity).toLocaleString()} FCFA\n`;
@@ -97,12 +98,18 @@ export default function CartPage() {
     if(discount > 0) message += `\nRemise ${appliedCoupon?.code}: -${discount.toLocaleString()} FCFA`;
     message += `\n*Total: ${total.toLocaleString()} FCFA*`;
 
-    // AJOUT 4: ON PREND LE NUMERO DEPUIS SETTINGS
-    const phone = settings?.whatsapp_number || "22890667868"; // fallback
-    const whatsappUrl = `https://wa.me/${22890667868}?text=${encodeURIComponent(message)}`  ;
+    // CORRECTION BUG: on utilise la variable phone en string
+    const phone = settings?.whatsapp_number || "22890667868";
+    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    
+    // OUVRIR AVANT DE VIDER POUR EVITER BLOCAGE NAVIGATEUR
     window.open(whatsappUrl, '_blank');
-    clearCart(); // vide le panier après commande
-    updateCart();
+    
+    // Vider après 300ms
+    setTimeout(() => {
+      clearCart(); // vide le panier après commande
+      updateCart();
+    }, 300);
   }
 
   return (
