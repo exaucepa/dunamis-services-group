@@ -4,10 +4,19 @@ import { getCart, removeFromCart, addToCart, clearCart } from ".././lib/cart";
 import { formatPrice } from ".././lib/products";
 import type { CartItem } from ".././lib/cart";
 import Link from "next/link";
-import { Trash2, Plus, Minus, ShoppingBag, Send } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag, Send, Ticket } from "lucide-react";
+import { supabase } from ".././lib/supabase";
 
 export default function PanierPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [isSending, setIsSending] = useState(false);
+
+  // NOUVEAU: ÉTATS POUR CODE PROMO
+  const [promoCode, setPromoCode] = useState("");
+  const [discount, setDiscount] = useState(0);
+  const [discountType, setDiscountType] = useState<'percent' | 'amount'>('percent');
+  const [promoError, setPromoError] = useState("");
+  const [loadingPromo, setLoadingPromo] = useState(false);
 
   const updateCart = () => setCart(getCart());
 
@@ -22,54 +31,118 @@ export default function PanierPage() {
   }, []);
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = cart.reduce((sum, item) => sum + (item.promo_price || item.price) * item.quantity, 0);
+  const subtotal = cart.reduce((sum, item) => sum + (item.promo_price || item.price) * item.quantity, 0);
+  
+  // NOUVEAU: CALCUL AVEC RÉDUCTION
+  const discountValue = discountType === 'percent' ? (subtotal * discount / 100) : discount;
+  const totalPrice = Math.max(0, subtotal - discountValue);
 
-  const increaseQty = (item: CartItem) => {
-    addToCart(item);
-  }
-
+  const increaseQty = (item: CartItem) => { addToCart(item); }
   const decreaseQty = (item: CartItem) => {
-    if (item.quantity <= 1) {
-      removeFromCart(item.id);
-    } else {
+    if (item.quantity <= 1) { removeFromCart(item.id); } 
+    else {
       const { quantity, ...product } = item;
       removeFromCart(item.id);
-      for (let i = 0; i < item.quantity - 1; i++) {
-        addToCart(product);
-      }
+      for (let i = 0; i < item.quantity - 1; i++) { addToCart(product); }
     }
     updateCart();
   }
 
-  // FONCTION WHATSAPP AJOUTÉE
-  const passerCommande = () => {
-    if (cart.length === 0) return;
+  // NOUVEAU: APPLIQUER CODE PROMO
+  const applyPromo = async () => {
+    if(!promoCode) return;
+    setLoadingPromo(true);
+    setPromoError("");
+    setDiscount(0);
     
-    const numero = "22890667868"; // <- REMPLACE PAR TON NUMÉRO WHATSAPP
-    
-    let message = `*NOUVELLE COMMANDE - DUNAMIS SERVICES* 👋\n\n`;
-    message += `*Détails de la commande:*\n`;
-    message += `--------------------------------\n`;
-    
-    cart.forEach((item, index) => {
-      const prix = item.promo_price || item.price;
-      message += `${index + 1}. *${item.name}*\n`;
-      message += `   Qté: ${item.quantity} | PU: ${formatPrice(prix)} FCFA\n`;
-      message += `   Total: ${formatPrice(prix * item.quantity)} FCFA\n`;
-    });
-    
-    message += `--------------------------------\n`;
-    message += `*Sous-total:* ${formatPrice(totalPrice)} FCFA\n`;
-    message += `*Livraison:* Gratuite\n`;
-    message += `*TOTAL À PAYER:* ${formatPrice(totalPrice)} FCFA\n\n`;
-    message += `Merci de me confirmer la commande.`;
+    const { data, error } = await supabase
+      .from('promo_codes')
+      .select('*')
+      .eq('code', promoCode.toUpperCase())
+      .gt('expires_at', new Date().toISOString())
+      .single();
 
-    const url = `https://wa.me/${numero}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+    if (error || !data) {
+      setPromoError("Code promo invalide ou expiré");
+    } else if (data.usage_limit && data.used_count >= data.usage_limit) {
+      setPromoError("Ce code a atteint sa limite d'utilisation");
+    } else {
+      if (data.discount_percent) {
+        setDiscount(data.discount_percent);
+        setDiscountType('percent');
+      } else {
+        setDiscount(data.discount_amount);
+        setDiscountType('amount');
+      }
+      setPromoError("");
+    }
+    setLoadingPromo(false);
+  };
+
+  const passerCommande = async () => {
+    if (cart.length === 0 || isSending) return;
+    setIsSending(true);
     
-    // Optionnel: vider le panier après envoi
-    // clearCart();
-    // updateCart();
+    const numero = "22890667868";
+    
+    try {
+      const { data: newOrder, error } = await supabase
+        .from('orders')
+        .insert([{
+          items: cart,
+          subtotal: subtotal, // AJOUT
+          discount: discountValue, // AJOUT
+          promo_code: promoCode || null, // AJOUT
+          total: totalPrice,
+          payment_status: 'pending',
+          order_status: 'pending',
+        }])
+        .select()
+        .single()
+
+      if(error || !newOrder) throw new Error("Erreur Supabase");
+
+     // INCRÉMENTER L'UTILISATION DU CODE
+if(promoCode && discount > 0) {
+  const { data: promo } = await supabase.from('promo_codes').select('used_count').eq('code', promoCode.toUpperCase()).single();
+  if(promo) {
+    await supabase.from('promo_codes').update({ used_count: promo.used_count + 1 }).eq('code', promoCode.toUpperCase());
+  }
+}
+
+      const orderId = newOrder.id;
+      const orderNumber = newOrder.order_number || orderId.slice(0,8);
+
+      let message = "NOUVELLE COMMANDE - DUNAMIS SERVICES 👋\n\n";
+      message += `ID COMMANDE: ${orderId}\n`;
+      message += `N°: ${orderNumber}\n`;
+      if(promoCode) message += `CODE PROMO: ${promoCode.toUpperCase()}\n\n`;
+      message += "Détails de la commande:\n";
+      message += "--------------------------------\n";
+      
+      cart.forEach((item, index) => {
+        const prix = item.promo_price || item.price;
+        message += `${index + 1}. ${item.name}\n`;
+        message += `   Qté: ${item.quantity} | PU: ${formatPrice(prix)} FCFA\n`;
+        message += `   Total: ${formatPrice(prix * item.quantity)} FCFA\n`;
+      });
+      
+      message += "--------------------------------\n";
+      message += `Sous-total: ${formatPrice(subtotal)} FCFA\n`;
+      if(discountValue > 0) message += `Réduction: -${formatPrice(discountValue)} FCFA\n`;
+      message += "Livraison: Gratuite\n";
+      message += `TOTAL À PAYER: ${formatPrice(totalPrice)} FCFA\n\n`;
+      message += "Merci de me confirmer la commande.";
+
+      const url = `https://wa.me/${numero}?text=${encodeURIComponent(message)}`;
+      window.open(url, '_blank');
+
+    } catch (err) {
+      alert("Erreur lors de l'enregistrement de la commande");
+      console.error(err)
+    } finally {
+      setIsSending(false);
+    }
   }
 
   if (cart.length === 0) {
@@ -110,18 +183,41 @@ export default function PanierPage() {
           ))}
         </div>
 
-        {/* REÇU REDESIGNÉ */}
-        <div className="bg-gradient-to-br from-blue-50 to-white dark:from-zinc-900 dark:to-zinc-950 p-6 rounded-2xl shadow-lg border-blue-100 dark:border-zinc-800 h-fit sticky top-24">
+        <div className="bg-gradient-to-br from-blue-50 to-white dark:from-zinc-900 dark:to-zinc-950 p-6 rounded-2xl shadow-lg border border-blue-100 dark:border-zinc-800 h-fit sticky top-24">
           <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
             <ShoppingBag size={24} className="text-blue-700"/>
             Résumé de commande
           </h2>
+
+          {/* NOUVEAU BLOC CODE PROMO PRO */}
+          <div className="mb-4 p-3 bg-gray-50 dark:bg-zinc-900 rounded-xl border-gray-200 dark:border-zinc-800">
+            <label className="font-semibold text-sm flex items-center gap-2 mb-2"><Ticket size={16}/> Code promo</label>
+            <div className="flex gap-2">
+              <input 
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                placeholder="ETE2026"
+                className="flex-1 p-2 text-sm border rounded-lg bg-white dark:bg-zinc-800 focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+              <button onClick={applyPromo} disabled={loadingPromo} className="bg-black dark:bg-white dark:text-black text-white px-4 py-2 text-sm rounded-lg font-bold hover:opacity-90 disabled:opacity-50">
+                {loadingPromo ? '...' : 'OK'}
+              </button>
+            </div>
+            {promoError && <p className="text-red-500 text-xs mt-1">{promoError}</p>}
+            {discount > 0 && <p className="text-green-600 text-xs mt-1 font-bold">✓ Réduction appliquée</p>}
+          </div>
           
           <div className="space-y-3 mb-4 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">Sous-total ({totalItems} articles)</span>
-              <span className="font-semibold">{formatPrice(totalPrice)} FCFA</span>
+              <span className="font-semibold">{formatPrice(subtotal)} FCFA</span>
             </div>
+            {discountValue > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Réduction</span>
+                <span className="font-semibold">- {formatPrice(discountValue)} FCFA</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">Livraison</span>
               <span className="font-semibold text-green-600">Gratuite</span>
@@ -137,10 +233,11 @@ export default function PanierPage() {
 
           <button 
             onClick={passerCommande}
-            className="w-full flex items-center justify-center gap-2 bg-green-600 text-white py-4 rounded-xl font-bold hover:bg-green-700 transition shadow-md hover:shadow-lg"
+            disabled={isSending}
+            className="w-full flex items-center justify-center gap-2 bg-green-600 text-white py-4 rounded-xl font-bold hover:bg-green-700 transition shadow-md hover:shadow-lg disabled:opacity-50"
           >
             <Send size={18}/>
-            Passer la commande via WhatsApp
+            {isSending ? "Envoi..." : "Passer la commande via WhatsApp"}
           </button>
           <p className="text-xs text-center text-gray-500 mt-3">Vous serez redirigé vers WhatsApp</p>
         </div>
