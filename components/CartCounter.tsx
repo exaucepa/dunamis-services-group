@@ -1,10 +1,21 @@
 'use client'
-import { useCart } from "../context/CartContext";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { getCartCount } from "../app/lib/cart"; // CORRIGÉ LE CHEMIN
 
 export default function CartCounter() {
-  const { cartCount } = useCart();
+  const [cartCount, setCartCount] = useState(0);
   
+  useEffect(() => {
+    const updateCount = () => setCartCount(getCartCount());
+    
+    updateCount(); // charge au démarrage
+    
+    // écoute quand le panier change depuis ProductCard
+    window.addEventListener('cartUpdated', updateCount);
+    return () => window.removeEventListener('cartUpdated', updateCount);
+  }, []);
+
   if (cartCount === 0) return null;
 
   return (
